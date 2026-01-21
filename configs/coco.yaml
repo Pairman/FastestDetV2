@@ -1,16 +1,15 @@
 DATASET:
-  TRAIN: "/home/qiuqiu/Desktop/coco2017/train2017.txt"
-  VAL: "/home/qiuqiu/Desktop/coco2017/val2017.txt"
+  TRAIN: "/data/datasets/coco-darknet/train2017.txt"
+  VAL: "/data/datasets/coco-darknet/val2017.txt"
   NAMES: "configs/coco.names"
 MODEL:
-  NC: 80
+  NUM_CLASSES: 80
   INPUT_WIDTH: 352
   INPUT_HEIGHT: 352
 TRAIN:
-  LR: 0.001
-  THRESH: 0.25
-  WARMUP: true
-  BATCH_SIZE: 96
+  LEARNING_RATE: 0.001
+  WARMUP_EPOCH: 5
+  BATCH_SIZE: 256
   END_EPOCH: 300
   MILESTIONES:
     - 100

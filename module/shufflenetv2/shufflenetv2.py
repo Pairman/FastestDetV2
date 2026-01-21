@@ -1,3 +1,4 @@
+from pathlib import Path
 import torch
 import torch.nn as nn
 
@@ -62,7 +63,7 @@ class ShuffleV2Block(nn.Module):
         return x[0], x[1]
 
 class ShuffleNetV2(nn.Module):
-    def __init__(self, stage_repeats, stage_out_channels, load_param):
+    def __init__(self, stage_repeats: list[int], stage_out_channels: list[int], load_weights: bool):
         super(ShuffleNetV2, self).__init__()
 
         self.stage_repeats = stage_repeats
@@ -86,17 +87,17 @@ class ShuffleNetV2(nn.Module):
             for i in range(numrepeat):
                 if i == 0:
                     stageSeq.append(ShuffleV2Block(input_channel, output_channel, 
-                                                mid_channels=output_channel // 2, ksize=3, stride=2))
+                        mid_channels=output_channel // 2, ksize=3, stride=2))
                 else:
                     stageSeq.append(ShuffleV2Block(input_channel // 2, output_channel, 
-                                                mid_channels=output_channel // 2, ksize=3, stride=1))
+                        mid_channels=output_channel // 2, ksize=3, stride=1))
                 input_channel = output_channel
             setattr(self, stage_names[idxstage], nn.Sequential(*stageSeq))
-        
-        if load_param == False:
-            self._initialize_weights()
-        else:
-            print("load param...")
+
+        if load_weights:
+            weights = str(Path(__file__).resolve().parent/f"{type(self).__name__.lower()}.pth")
+            self.load_state_dict(torch.load(weights))
+            print(f"Loaded backbone weights {weights}")
 
     def forward(self, x):
         x = self.first_conv(x)
@@ -104,9 +105,28 @@ class ShuffleNetV2(nn.Module):
         P1 = self.stage2(x)
         P2 = self.stage3(P1)
         P3 = self.stage4(P2)
-
         return P1, P2, P3
 
-    def _initialize_weights(self):
-        print("Initialize params from:%s"%"./module/shufflenetv2.pth")
-        self.load_state_dict(torch.load("./module/shufflenetv2.pth"), strict = True)
+class ShuffleNetV2Classifier(nn.Module):
+    """Classification model with ShuffleNetV2 backbone."""
+
+    def __init__(self, width=1.0, num_classes=1000):
+        super().__init__()
+        self.backbone = ShuffleNetV2([4, 8, 4], [-1, 24, 48, 96, 192], False)
+        # Classification head
+        self.gap = nn.AdaptiveAvgPool2d(1)
+        self.fc = nn.Linear(int(192 * width), num_classes)
+
+    def forward(self, x):
+        _, _, p3 = self.backbone(x) # (B, C, H, W)
+        x = self.gap(p3)            # (B, C, 1, 1)
+        x = x.view(x.size(0), -1)   # (B, C)
+        x = self.fc(x)              # (B, CLS)
+        return x
+
+if __name__ == "__main__":
+    import torch
+    x = torch.randn(1, 3, 352, 352)
+    model = ShuffleNetV2([4, 8, 4], [-1, 24, 48, 96, 192], False)
+    p1, p2, p3 = model(x)
+    print(p1.shape, p2.shape, p3.shape)

@@ -1,1 +1,7 @@
 __pycache__
+
+*.png
+*.jpg
+
+checkpoints*/
+wandb/

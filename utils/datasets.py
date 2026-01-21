@@ -5,53 +5,42 @@ import numpy as np
 import torch
 import random
 
-def random_crop(image, boxes):
-    height, width, _ = image.shape
-    # random crop imgage
-    cw, ch = random.randint(int(width * 0.75), width), random.randint(int(height * 0.75), height)
-    cx, cy = random.randint(0, width - cw), random.randint(0, height - ch)
+def horizontal_flip(image, boxes):
+    boxes = boxes.copy()
+    boxes[:, 2] = 1 - boxes[:, 2] # flip cx
+    return image[:, ::-1], boxes
 
+def random_crop(image, boxes):
+    h, w, _ = image.shape
+    # random crop
+    cw, ch = random.randint(int(w * 0.75), w), random.randint(int(h * 0.75), h)
+    cx, cy = random.randint(0, w - cw), random.randint(0, h - ch)
     roi = image[cy:cy + ch, cx:cx + cw]
     roi_h, roi_w, _ = roi.shape
-    
-    output = []
-    for box in boxes:
-        index, category = box[0], box[1]
-        bx, by = box[2] * width, box[3] * height
-        bw, bh = box[4] * width, box[5] * height
-
-        bx, by = (bx - cx)/roi_w, (by - cy)/roi_h
-        bw, bh = bw/roi_w, bh/roi_h
-
-        output.append([index, category, bx, by, bw, bh])
-
-    output = np.array(output, dtype=float)
-
-    return roi, output
+    # bbox transform
+    xy = boxes[:, 2:4] * np.array([w, h])
+    wh = boxes[:, 4:6] * np.array([w, h])
+    xy = (xy - np.array([cx, cy])) / np.array([roi_w, roi_h])
+    wh = wh / np.array([roi_w, roi_h])
+    out = boxes.copy()
+    out[:, 2:4], out[:, 4:6] = xy, wh
+    return roi, out
 
 def random_narrow(image, boxes):
-    height, width, _ = image.shape
+    h, w, _ = image.shape
     # random narrow
-    cw, ch = random.randint(width, int(width * 1.25)), random.randint(height, int(height * 1.25))
-    cx, cy = random.randint(0, cw - width), random.randint(0, ch - height)
-
-    background = np.ones((ch, cw, 3), np.uint8) * 128
-    background[cy:cy + height, cx:cx + width] = image
-
-    output = []
-    for box in boxes:
-        index, category = box[0], box[1]
-        bx, by = box[2] * width, box[3] * height
-        bw, bh = box[4] * width, box[5] * height
-
-        bx, by = (bx + cx)/cw, (by + cy)/ch
-        bw, bh = bw/cw, bh/ch
-
-        output.append([index, category, bx, by, bw, bh])
-
-    output = np.array(output, dtype=float)
-
-    return background, output
+    cw, ch = random.randint(w, int(w * 1.25)), random.randint(h, int(h * 1.25))
+    cx, cy = random.randint(0, cw - w), random.randint(0, ch - h)
+    bg = np.ones((ch, cw, 3), np.uint8) * 128
+    bg[cy:cy + h, cx:cx + w] = image
+    # bbox transform
+    xy = boxes[:, 2:4] * np.array([w, h])
+    wh = boxes[:, 4:6] * np.array([w, h])
+    xy = (xy + np.array([cx, cy])) / np.array([cw, ch])
+    wh = wh / np.array([cw, ch])
+    out = boxes.copy()
+    out[:, 2:4], out[:, 4:6] = xy, wh
+    return bg, out
 
 def collate_fn(batch):
     img, label = zip(*batch)
@@ -60,78 +49,58 @@ def collate_fn(batch):
             l[:, 0] = i
     return torch.stack(img), torch.cat(label, 0)
 
-class TensorDataset():
+class Dataset():
     def __init__(self, path, img_width, img_height, aug=False):
-        assert os.path.exists(path), "%s文件路径错误或不存在" % path
-
+        if not os.path.exists(path):
+            raise FileNotFoundError(path)
         self.aug = aug
-        self.path = path
-        self.data_list = []
         self.img_width = img_width
         self.img_height = img_height
-        self.img_formats = ['bmp', 'jpg', 'jpeg', 'png']
+        with open(path, "r") as f:
+            lines = [line.strip() for line in f if line.strip()]
 
-        # 数据检查
-        with open(self.path, 'r') as f:
-            for line in f.readlines():
-                data_path = line.strip()
-                if os.path.exists(data_path):
-                    img_type = data_path.split(".")[-1]
-                    if img_type not in self.img_formats:
-                        raise Exception("img type error:%s" % img_type)
-                    else:
-                        self.data_list.append(data_path)
-                else:
-                    raise Exception("%s is not exist" % data_path)
+        self.data_list = []
+        for path in lines:
+            if not os.path.exists(path):
+                raise FileNotFoundError(path)
+            ext = os.path.splitext(path)[1].lower()
+            if ext not in {".bmp", ".jpg", ".jpeg", ".png"}:
+                raise ValueError(ext)
+            self.data_list.append(path)
 
     def __getitem__(self, index):
         img_path = self.data_list[index]
-        label_path = img_path.split(".")[0] + ".txt"
-
-        # 加载图片
-        img = cv2.imread(img_path)
-        # 加载label文件
-        if os.path.exists(label_path):
-            label = []
-            with open(label_path, 'r') as f:
-                for line in f.readlines():
-                    l = line.strip().split(" ")
-                    label.append([0, l[0], l[1], l[2], l[3], l[4]])
-            label = np.array(label, dtype=np.float32)
-
-            if label.shape[0]:
-                assert label.shape[1] == 6, '> 5 label columns: %s' % label_path
-                #assert (label >= 0).all(), 'negative labels: %s'%label_path
-                #assert (label[:, 1:] <= 1).all(), 'non-normalized or out of bounds coordinate labels: %s'%label_path
-        else:
-            raise Exception("%s is not exist" % label_path) 
-
-        # 是否进行数据增强
+        label_path = f"{img_path.rsplit('.', 1)[0]}.txt"
+        # load image
+        img = cv2.imread(img_path, cv2.IMREAD_COLOR)
+        if img is None:
+            raise ValueError(img_path)
+        # load labels
+        if not os.path.exists(label_path):
+            raise FileNotFoundError(label_path)
+        label = np.loadtxt(label_path, dtype=np.float32)
+        if label.ndim == 1:
+            label = label[None, :]
+        label = np.pad(label, ((0,0),(1,0)), constant_values=0) 
+        # augmentation
         if self.aug:
-            if random.randint(1, 10) % 2 == 0:
+            if random.getrandbits(1):
                 img, label = random_narrow(img, label)
             else:
                 img, label = random_crop(img, label)
-
-        img = cv2.resize(img, (self.img_width, self.img_height), interpolation = cv2.INTER_LINEAR) 
-
-        # debug
-        # for box in label:
-        #     bx, by, bw, bh = box[2], box[3], box[4], box[5]
-        #     x1, y1 = int((bx - 0.5 * bw) * self.img_width), int((by - 0.5 * bh) * self.img_height)
-        #     x2, y2 = int((bx + 0.5 * bw) * self.img_width), int((by + 0.5 * bh) * self.img_height)
-        #     cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        # cv2.imwrite("debug.jpg", img)
-
-        img = img.transpose(2,0,1)
-        
+            if random.getrandbits(1):
+                img, label = horizontal_flip(img, label)
+        # resize
+        img = cv2.resize(img, (self.img_width, self.img_height),
+            interpolation=cv2.INTER_LINEAR) 
+        # hwc->chw
+        img = img.transpose(2,0,1).astype(np.float32)
         return torch.from_numpy(img), torch.from_numpy(label)
 
     def __len__(self):
         return len(self.data_list)
 
 if __name__ == "__main__":
-    data = TensorDataset("/home/xuehao/Desktop/TMP/pytorch-yolo/widerface/train.txt")
+    data = Dataset("/data/datasets/coco-darknet/val2017.txt")
     img, label = data.__getitem__(0)
-    print(img.shape)
-    print(label.shape)
+    print(img.shape, label.shape)
