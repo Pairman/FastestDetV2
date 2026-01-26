@@ -4,39 +4,39 @@ from pathlib import Path
 from shutil import get_terminal_size
 import sys
 import torch
-from torch.utils.data import DataLoader
 from tqdm import tqdm
 _ROOT = str(Path(__file__).resolve())
 if not _ROOT in sys.path:
     sys.path.append(_ROOT)
 from module.fastestdetv2 import FastestDetV2
-from module.loss import DetectorLoss
 from utils.config import Config
 from utils.datasets import collate_fn, Dataset
 from utils.evaluator import COCODetectionEvaluator
+from utils.loss import DetectorLoss
 from utils.lr import MultiStepCosineLR
 from utils.reparam import reparameterize_model
+from utils.sgds import SGDS
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--device", type=str, default="cuda", help="device")
     parser.add_argument("--weights", type=str, default=None, help=".pt weights")
-    parser.add_argument("--yaml", type=str, default="", help=".yaml config")
+    parser.add_argument("--configs", type=str, default=str(Path(__file__).parent/"configs/coco.yaml"), help=".yaml config")
     parser.add_argument("--enable-wandb", action="store_true", help="log to wandb")
     opt = parser.parse_args()
-    cfg = Config(opt.yaml)
-    cfg_name = Path(opt.yaml).stem
+    cfg = Config(opt.configs)
+    cfg_name = Path(opt.configs).stem
     savedir = Path(__file__).resolve().parent/"checkpoints"
     savedir.mkdir(exist_ok=True)
     ncols = get_terminal_size().columns
     # data loaders
     num_workers = max(4, cpu_count() // 4)
-    train_dataset = Dataset(cfg.train_txt, cfg.input_width, cfg.input_height, True)
-    val_dataset = Dataset(cfg.val_txt, cfg.input_width, cfg.input_height, False)
-    train_loader = DataLoader(train_dataset, cfg.batch_size,
+    train_dataset = Dataset(cfg.train_txt, cfg.input_size, aug=True)
+    val_dataset = Dataset(cfg.val_txt, cfg.input_size, aug=False)
+    train_loader = torch.utils.data.DataLoader(train_dataset, cfg.batch_size,
         shuffle=True, collate_fn=collate_fn, drop_last=True,
         num_workers=num_workers, persistent_workers=True)
-    val_loader = DataLoader(val_dataset, cfg.batch_size,
+    val_loader = torch.utils.data.DataLoader(val_dataset, cfg.batch_size,
         shuffle=False, collate_fn=collate_fn, drop_last=False,
         num_workers=num_workers, persistent_workers=True)
     # model
@@ -52,8 +52,9 @@ if __name__ == "__main__":
     # optimizer
     criterion = DetectorLoss(opt.device)
     params = [{"params": [], "weight_decay": 5e-4}, {"params": [], "weight_decay": 0.0}]
-    for n, p in model.named_parameters():                                              params[1 if p.ndim == 1 or n.endswith(".bias") else 0]["params"].append(p)
-    optimizer = torch.optim.SGD(params, lr=cfg.learning_rate, momentum=0.949)
+    for n, p in model.named_parameters():
+        params[1 if p.ndim == 1 or n.endswith(".bias") else 0]["params"].append(p)
+    optimizer = SGDS(params, lr=cfg.learning_rate, momentum=0.949)
     scheduler = MultiStepCosineLR(optimizer, milestones=cfg.milestones)
     if opt.enable_wandb:
         import wandb
@@ -87,9 +88,9 @@ if __name__ == "__main__":
             avg_obj += obj.item()
             avg_cls += cls.item()
             avg_total += total.item()
-            pbar.set_description(f"{epoch}: LR{optimizer.param_groups[0]['lr']:.2} "
-                f"IoU{avg_iou/(ib+1):.2f} Obj{avg_obj/(ib+1):.2f} "
-                f"Cls{avg_cls/(ib+1):.2f} Tot{avg_total/(ib+1):.2f}")
+            pbar.set_description(f"{epoch}: lr{optimizer.param_groups[0]['lr']:.2} "
+                f"iou{avg_iou/(ib+1):.2f} obj{avg_obj/(ib+1):.2f} "
+                f"cls{avg_cls/(ib+1):.2f} loss{avg_total/(ib+1):.2f}")
         if opt.enable_wandb:
             wandb.log({"train/lr": optimizer.param_groups[0]["lr"],
                 "train/iou": avg_iou/(ib+1), "train/obj": avg_obj/(ib+1),
@@ -106,9 +107,9 @@ if __name__ == "__main__":
             if stats["coco/AP50"] > best_ap50:
                 best_ap50 = stats["coco/AP50"]
                 torch.save(model_eval.state_dict(), str(savedir/
-                    f"{proj_name}_ap50,{best_ap50}_ep{epoch}.pth"))
+                    f"{proj_name}_ap50,{best_ap50:.6f}_ep{epoch}.pth"))
                 torch.save(model.state_dict(), str(savedir/
-                    f"{proj_name}_ap50,{best_ap50}_ep{epoch}_unfused.pth"))
+                    f"{proj_name}_ap50,{best_ap50:.6f}_ep{epoch}_unfused.pth"))
             if opt.enable_wandb:
                 wandb.log(stats, step=epoch)
     if opt.enable_wandb:

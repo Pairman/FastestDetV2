@@ -8,7 +8,6 @@ if not _ROOT in sys.path:
 from module.layers import DetectHead, SPP
 from module.shufflenetv2.shufflenetv2 import ShuffleNetV2
 from module.qamobileone.qamobileone import QAMobileOne
-from utils.reparam import reparameterize_model
 
 class FastestDetV2(nn.Module):
     def __init__(self, num_classes: int, load_weights: bool=False, inference_mode: bool=False):
@@ -31,44 +30,8 @@ class FastestDetV2(nn.Module):
         return self.det(y)
 
 if __name__ == "__main__":
-    # from mobileone.mobileone import reparameterize_model
-    # model = FastestDet(80, load_weights=False, inference_mode=False, is_expr=True)
-    # x = torch.rand(1, 3, 352, 352)
-    # model.eval()
-    # with torch.no_grad():
-    #     print(model(x).shape)
-    #     print(reparameterize_model(model)(x).shape)
-
-    from timeit import default_timer as time
-    import numpy as np
-    import torch
-    device = torch.device("cpu")
-    n_warmup, n_run = 10, 1000
-    configs = [[]]
-    models = [
-        FastestDetV2(80, True, True).eval().to(device)
-    ]
-    times = [[] for _ in configs]
+    model = FastestDetV2(80, load_weights=False, inference_mode=False)
+    x = torch.rand(1, 3, 352, 352)
+    model.eval()
     with torch.no_grad():
-        for i in range(n_warmup + n_run):
-            x = torch.rand(1, 3, 352, 352, device=device)
-            _t = []
-            for model, ts in zip(models, times):
-                t = time()
-                _ = model(x)
-                t = time() - t
-                ts.append(t)
-                _t.append(t)
-            print(f"i={i}, time={_t}")
-
-    times = [ts[n_warmup:] for ts in times]
-    stats = [{
-        "avg": float(arr.mean()),
-        "min": float(arr.min()),
-        "max": float(arr.max()),
-        "std": float(arr.std()),
-        "p95": float(np.percentile(arr, 95)),
-        "p99": float(np.percentile(arr, 99)),
-    } for arr in [np.array(ts) for ts in times]]
-    for config, stat in zip(configs, stats):
-        print(f"config={config}, stats={stat}", flush=True)
+        print(model(x).shape)

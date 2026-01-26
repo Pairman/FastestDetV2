@@ -14,6 +14,7 @@ if not _ROOT in sys.path:
     sys.path.append(_ROOT)
 from module.qamobileone.qamobileone import QAMobileOneClassifier
 from utils.reparam import reparameterize_model
+from utils.sgds import SGDS
 
 class DataLoaderX(DataLoader):
     def __iter__(self):
@@ -82,7 +83,7 @@ if __name__ == "__main__":
     params = [{"params": [], "weight_decay": 8e-5}, {"params": [], "weight_decay": 0.0}]
     for n, p in model.named_parameters():
         params[1 if p.ndim == 1 or n.endswith(".bias") else 0]["params"].append(p)
-    optimizer = torch.optim.SGD(params, lr=cfg["learning_rate"], momentum=0.9)
+    optimizer = SGDS(params, lr=cfg["learning_rate"], momentum=0.9)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=cfg["end_epoch"])
     if opt.enable_wandb:
         import wandb

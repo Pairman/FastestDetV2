@@ -2,9 +2,9 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 
-class ShuffleV2Block(nn.Module):
+class ShuffleNetV2Block(nn.Module):
     def __init__(self, inp, oup, mid_channels, *, ksize, stride):
-        super(ShuffleV2Block, self).__init__()
+        super(ShuffleNetV2Block, self).__init__()
         self.stride = stride
         assert stride in [1, 2]
 
@@ -86,10 +86,10 @@ class ShuffleNetV2(nn.Module):
             stageSeq = []
             for i in range(numrepeat):
                 if i == 0:
-                    stageSeq.append(ShuffleV2Block(input_channel, output_channel, 
+                    stageSeq.append(ShuffleNetV2Block(input_channel, output_channel, 
                         mid_channels=output_channel // 2, ksize=3, stride=2))
                 else:
-                    stageSeq.append(ShuffleV2Block(input_channel // 2, output_channel, 
+                    stageSeq.append(ShuffleNetV2Block(input_channel // 2, output_channel, 
                         mid_channels=output_channel // 2, ksize=3, stride=1))
                 input_channel = output_channel
             setattr(self, stage_names[idxstage], nn.Sequential(*stageSeq))

@@ -79,7 +79,7 @@ class DetectorLoss(nn.Module):
         # obj and cls loss functions
         BCEcls = nn.NLLLoss() 
         BCEobj = nn.SmoothL1Loss(reduction="none")
-        # build targets
+            # build targets
         gt_box, gt_cls, ps_index = self.build_target(preds, targets)
         pred = preds.permute(0, 2, 3, 1)
         # objectness

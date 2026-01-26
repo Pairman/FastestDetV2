@@ -1,10 +1,10 @@
-import torch
+from timeit import default_timer as time
 import numpy as np
-from tqdm import tqdm
-from utils.postproc import *
-
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
+import torch
+from tqdm import tqdm
+from utils.postproc import *
 
 _stat_names = [
     "coco/AP", "coco/AP50", "coco/AP75",
@@ -14,12 +14,9 @@ _stat_names = [
 ]
 
 class COCODetectionEvaluator():
-    def __init__(self, names, device="cuda"):
+    def __init__(self, names: list[str], device="cuda"):
         self.device = device
-        self.names = []
-        with open(names) as f:
-            for line in f.readlines():
-                self.names.append(line.strip())
+        self.names = names
     
     def _eval(self, gts, dts):
         # create ground truths
@@ -89,13 +86,18 @@ class COCODetectionEvaluator():
         return dict(zip(_stat_names, coco_eval.stats))
 
     def eval(self, val_loader, model, **kwargs):
-        gts, dts = [], []
+        times, times_nms, gts, dts = [], [], [], []
         pbar = tqdm(val_loader, **kwargs)
         for imgs, labels in pbar:
             imgs = imgs.to(self.device).float() / 255.0
             with torch.no_grad():
+                t1 = time()
                 preds = model(imgs)
+                t2 = time()
                 output = process_preds(preds, conf_thres=0.001)
+                t3 = time()
+            times.append(t2 - t1)
+            times_nms.append(t3 - t1)
             n, _, h, w = imgs.shape
             # detections
             for p in output:
@@ -119,4 +121,14 @@ class COCODetectionEvaluator():
                         x2, y2 = bcx + 0.5 * bw, bcy + 0.5 * bh
                         gtboxes.append([category, x1, y1, x2, y2])
                 gts.append(np.array(gtboxes))
-        return self._eval(gts, dts)
+        stats = self._eval(gts, dts)
+        times, times_nms = np.array(times), np.array(times_nms)
+        stats.update(**{
+            "time/infer_avg": float(times.mean()),
+            "time/infer_p95": float(np.percentile(times, 95)),
+            "time/infer_p99": float(np.percentile(times, 99)),
+            "time/infer+nms_avg": float(times_nms.mean()),
+            "time/infer+nms_p95": float(np.percentile(times_nms, 95)),
+            "time/infer+nms_p99": float(np.percentile(times_nms, 99)),
+        })
+        return stats

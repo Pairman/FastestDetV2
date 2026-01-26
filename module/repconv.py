@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+# https://github.com/meituan/YOLOv6/blob/e86a483/yolov6/layers/common.py#L396
 class QARepConv(nn.Module):
     """Quantization-aware re-parameterizable Conv2d + BN2d block."""
     def __init__(self, in_channels: int, out_channels: int, kernel_size: int,

@@ -57,9 +57,7 @@ class QAMobileOneClassifier(nn.Module):
     """Classification model with QAMobileOne backbone."""
 
     def __init__(self, num_blocks_per_stage=[1, 2, 3, 2],
-                 base_channels=[24, 48, 96, 192],
-                 num_classes=1000,
-                 inference_mode=False):
+        base_channels=[24, 48, 96, 192], num_classes=1000, inference_mode=False):
         super().__init__()
         self.backbone = QAMobileOne(num_blocks_per_stage, base_channels,
             inference_mode=inference_mode)
