@@ -129,5 +129,4 @@ python3 quant.py --configs CONFIGS_PATH --weights WEIGHTS_PATH --image IMAGE_PAT
 - Auxiliary Guidance Module: https://github.com/RangiLyu/nanodet
 - Quantization-aware RepConv: https://github.com/meituan/YOLOv6
 - MobileOne: https://github.com/apple/ml-mobileone and https://github.com/glory-wan/TF-Net
-- SGD with Stable Weight Decay: https://github.com/zeke-xie/stable-weight-decay-regularization
 - NCNN: https://github.com/Tencent/ncnn
