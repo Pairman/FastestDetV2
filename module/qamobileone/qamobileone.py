@@ -67,10 +67,10 @@ class QAMobileOneClassifier(nn.Module):
 
     def forward(self, x):
         _, _, p3 = self.backbone(x) # (B, C, H, W)
-        x = self.gap(p3)            # (B, C, 1, 1)
-        x = x.view(x.size(0), -1)   # (B, C)
-        x = self.fc(x)              # (B, CLS)
-        return x
+        y = self.gap(p3)            # (B, C, 1, 1)
+        y = y.view(y.size(0), -1)   # (B, C)
+        y = self.fc(y)              # (B, CLS)
+        return y
 
 if __name__ == "__main__":
     x = torch.randn(1, 3, 352, 352)

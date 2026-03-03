@@ -5,8 +5,9 @@ class Config:
     def __init__(self, path):
         with open(path, encoding="utf-8") as f:
             data = yaml.load(f, Loader=yaml.FullLoader)
-        if isinstance(data["DATASET"]["NAMES"], str) and \
-            os.path.exists(data["DATASET"]["NAMES"]):
+        if isinstance(data["DATASET"]["NAMES"], str):
+            if not os.path.exists(data["DATASET"]["NAMES"]):
+                raise FileNotFoundError(data["DATASET"]["NAMES"])
             with open(data["DATASET"]["NAMES"], "r") as f:
                 data["DATASET"]["NAMES"] = [l.strip() for l in f.readlines()]
 

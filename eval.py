@@ -15,7 +15,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--device", type=str, default="cuda", help="device")
     parser.add_argument("--weights", type=str, default=None, help=".pt weights")
-    parser.add_argument("--configs", type=str, default=str(Path(__file__).parent/"configs/coco.yaml"), help=".yaml config")
+    parser.add_argument("--configs", type=str, default=str(Path(__file__).parent/"configs/coco.yaml"), help=".yaml configs")
     opt = parser.parse_args()
     cfg = Config(opt.configs)
     # data loaders

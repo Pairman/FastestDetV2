@@ -3,9 +3,12 @@ import torch
 import torch.nn as nn
 
 class DetectorLoss(nn.Module):
-    def __init__(self, device):    
+    def __init__(self, device="cpu"):    
         super().__init__()
         self.device = device
+        # obj and cls loss functions
+        self.BCEcls = nn.NLLLoss() 
+        self.BCEobj = nn.SmoothL1Loss(reduction="none")
 
     def bbox_iou(self, box1, box2, eps=1e-7):
         """Compute IoU-based loss (SIoU)"""
@@ -27,7 +30,7 @@ class DetectorLoss(nn.Module):
         # siou loss from https://arxiv.org/pdf/2205.12740.pdf
         s_cw = (b2_x1 + b2_x2 - b1_x1 - b1_x2) * 0.5
         s_ch = (b2_y1 + b2_y2 - b1_y1 - b1_y2) * 0.5
-        sigma = torch.pow(s_cw ** 2 + s_ch ** 2, 0.5)
+        sigma = torch.pow(s_cw ** 2 + s_ch ** 2, 0.5) + eps
         sin_alpha_1 = torch.abs(s_cw) / sigma
         sin_alpha_2 = torch.abs(s_ch) / sigma
         threshold = pow(2, 0.5) / 2
@@ -41,8 +44,8 @@ class DetectorLoss(nn.Module):
         omiga_h = torch.abs(h1 - h2) / torch.max(h1, h2)
         shape_cost = torch.pow(1 - torch.exp(-1 * omiga_w), 4) + \
                      torch.pow(1 - torch.exp(-1 * omiga_h), 4)
-        iou_loss = iou - 0.5 * (distance_cost + shape_cost)
-        return iou_loss
+        siou_score = iou - 0.5 * (distance_cost + shape_cost)
+        return siou_score, iou
         
     def build_target(self, preds, targets):
         """Build ground truths"""
@@ -73,14 +76,9 @@ class DetectorLoss(nn.Module):
             gt_cls.append(gt[..., 1].long()[j])
         return gt_box, gt_cls, ps_index
 
-    def forward(self, preds, targets):
-        ft = torch.cuda.FloatTensor if preds[0].is_cuda else torch.Tensor
-        cls_loss, iou_loss, obj_loss = ft([0]), ft([0]), ft([0])
-        # obj and cls loss functions
-        BCEcls = nn.NLLLoss() 
-        BCEobj = nn.SmoothL1Loss(reduction="none")
-            # build targets
-        gt_box, gt_cls, ps_index = self.build_target(preds, targets)
+    def get_loss(self, preds, gt_info, eps=1e-9):
+        """Compute single head detector loss."""
+        gt_box, gt_cls, ps_index = gt_info
         pred = preds.permute(0, 2, 3, 1)
         # objectness
         pobj = pred[:, :, :, 0]
@@ -88,9 +86,11 @@ class DetectorLoss(nn.Module):
         preg = pred[:, :, :, 1:5]
         # class regression
         pcls = pred[:, :, :, 5:]
-        _, H, W, _ = pred.shape
+        B, H, W, _ = pred.shape
         tobj = torch.zeros_like(pobj) 
         factor = torch.ones_like(pobj) * 0.75
+        l_iou, l_obj, l_cls = torch.zeros(1, device=self.device), \
+            torch.zeros(1, device=self.device), torch.zeros(1, device=self.device)
         if len(gt_box) > 0:
             # box regression loss
             b, gx, gy = ps_index[0]
@@ -100,21 +100,41 @@ class DetectorLoss(nn.Module):
             ptbox[:, 2] = preg[b, gy, gx][:, 2].sigmoid() * W
             ptbox[:, 3] = preg[b, gy, gx][:, 3].sigmoid() * H
             # iou loss
-            iou = self.bbox_iou(ptbox, gt_box[0])
-            f = iou > iou.mean()
-            b, gy, gx = b[f], gy[f], gx[f]
-            iou = iou[f]
-            iou_loss =  (1.0 - iou).mean() 
-            # classification loss
-            ps = torch.log(pcls[b, gy, gx])
-            cls_loss = BCEcls(ps, gt_cls[0][f])
-            # iou-aware objectness
-            tobj[b, gy, gx] = iou.float()
+            siou_score, raw_iou = self.bbox_iou(ptbox, gt_box[0])
+            f = siou_score > siou_score.mean()
+            if f.any():
+                b_f, gy_f, gx_f = b[f], gy[f], gx[f]
+                l_iou =  (1.0 - siou_score[f]).mean()
+                # classification loss
+                ps = torch.log(pcls[b_f, gy_f, gx_f] + 1e-9)
+                l_cls = self.BCEcls(ps, gt_cls[0][f])
+                # iou-aware objectness
+                tobj[b_f, gy_f, gx_f] = raw_iou[f].float().detach()
             # positive sample balancing
-            n = torch.bincount(b)
-            factor[b, gy, gx] =  (1. / (n[b] / (H * W))) * 0.25
+            n = torch.bincount(b, minlength=B)
+            factor[b, gy, gx] = (1.0 / (n[b].float() / (H * W) + eps)) * 0.25
         # objectness loss
-        obj_loss = (BCEobj(pobj, tobj) * factor).mean()
+        l_obj = (self.BCEobj(pobj, tobj) * factor).mean()               
+        return l_iou, l_obj, l_cls
+
+    def forward(self, preds, targets):
+        if isinstance(preds, tuple):
+            preds, aux_preds = preds
+        else:
+            preds, aux_preds = preds, None
+        # assign guidance
+        guidance = preds.detach() if aux_preds is None else aux_preds.detach()
+        gt_info = self.build_target(guidance, targets)
+        # main branch loss
+        l_iou_m, l_obj_m, l_cls_m = self.get_loss(preds, gt_info)
+        # auxiliary branch loss
+        if aux_preds is None:
+            l_iou, l_obj, l_cls = l_iou_m, l_obj_m, l_cls_m
+        else:
+            l_iou_a, l_obj_a, l_cls_a = self.get_loss(aux_preds, gt_info)
+            l_iou = l_iou_m + l_iou_a
+            l_obj = l_obj_m + l_obj_a
+            l_cls = l_cls_m + l_cls_a
         # total loss
-        loss = (iou_loss * 8) + (obj_loss * 16) + cls_loss                      
-        return iou_loss, obj_loss, cls_loss, loss
+        loss = (l_iou * 8.0) + (l_obj * 16.0) + l_cls
+        return l_iou, l_obj, l_cls, loss

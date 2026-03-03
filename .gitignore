@@ -3,5 +3,7 @@ __pycache__
 *.png
 *.jpg
 
-checkpoints*/
+checkpoints/
 wandb/
+
+.vscode/

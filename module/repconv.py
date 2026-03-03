@@ -54,7 +54,7 @@ class QARepConv(nn.Module):
     def fuse_skip(in_channels: int, kernel_size: int, groups: int) -> torch.Tensor:
         """Convert Identity to Conv2d."""
         center = (kernel_size - 1) // 2
-        if groups == in_channels:  # depthwise
+        if groups == in_channels:  # depthwise conv
             w = torch.zeros(in_channels, 1, kernel_size, kernel_size)
             for i in range(in_channels):
                 w[i, 0, center, center] = 1

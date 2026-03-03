@@ -1,20 +1,27 @@
 DATASET:
+  # Path to training images list file (darknet style) or directory (yolo style)
   TRAIN: "/data/datasets/coco-darknet/train2017.txt"
+  # Path to evaluation images list file (darknet style) or directory (yolo style)
   VAL: "/data/datasets/coco-darknet/val2017.txt"
+  # Path to class names list file or list of class names
   NAMES: [person, bicycle, car, motorbike, aeroplane, bus, train, truck, boat, traffic light, fire hydrant, stop sign, parking meter, bench, bird, cat,
     dog, horse, sheep, cow, elephant, bear, zebra, giraffe, backpack, umbrella, handbag, tie, suitcase, frisbee, skis, snowboard,
     sports ball, kite, baseball bat, baseball glove, skateboard, surfboard, tennis racket, bottle, wine glass, cup, fork, knife, spoon, bowl, banana, apple,
     sandwich, orange, broccoli, carrot, hot dog, pizza, donut, cake, chair, sofa, pottedplant, bed, diningtable, toilet, tvmonitor, laptop,
     mouse, remote, keyboard, cell phone, microwave, oven, toaster, sink, refrigerator, book, clock, vase, scissors, teddy bear, hair drier, toothbrush]
 MODEL:
+  # Number of classes
   NUM_CLASSES: 80
+  # Input width and height
   INPUT_SIZE: [352, 352]
 TRAIN:
+  # Initial learning rate
   LEARNING_RATE: 0.001
+  # Number of warm-up epochs
   WARMUP_EPOCH: 5
+  # Batch size
   BATCH_SIZE: 256
+  # Total training epochs
   END_EPOCH: 300
-  MILESTIONES:
-    - 100
-    - 200
-    - 250
+  # Epochs for learning rate decay
+  MILESTIONES: [100, 200, 250]
