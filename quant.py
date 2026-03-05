@@ -18,6 +18,7 @@ from utils.config import Config
 from utils.datasets import collate_fn, Dataset
 from utils.evaluator import COCODetectionEvaluator
 from utils.loss import DetectorLoss
+from utils.quant import print_quant_stats
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -43,7 +44,7 @@ if __name__ == "__main__":
         shuffle=True, collate_fn=collate_fn, drop_last=True,
         num_workers=num_workers, persistent_workers=True)
     val_loader = torch.utils.data.DataLoader(val_dataset,
-        shuffle=False, collate_fn=collate_fn, drop_last=False,
+        shuffle=False, collate_fn=collate_fn, drop_last=True,
         num_workers=num_workers, persistent_workers=True)
     # model
     model = FastestDetV2(cfg.num_classes,
@@ -63,20 +64,22 @@ if __name__ == "__main__":
         quantizer.set_module_name_qconfig("backbone", qconfig)
     else:
         import torch.ao.quantization.quantizer.xnnpack_quantizer as xpq
+        # XNNPACKQuantizer.set_module_name() is unreliable in torch 2.6.
+        # .set_global(), then exclude non-backbone blocks.
+        class _SelectiveXNNPACKQuantizer(xpq.XNNPACKQuantizer):
+            def set_module_name(self, module_name: str, quantization_config):
+                self.module_name_config[module_name] = quantization_config
+                return self
         qconfig = xpq.get_symmetric_quantization_config()
-        quantizer = xpq.XNNPACKQuantizer()
-        # # 1) 3.7M -> ~940K
+        quantizer = _SelectiveXNNPACKQuantizer()
         quantizer.set_global(qconfig)
-        # 2) 3.7M -> 3.6M
-        # for n, m in model.named_modules():
-        #     if n.startswith(("backbone")):
-        #         quantizer.set_module_name(n, qconfig)
-        # quantizer.set_module_type(type(model.backbone), qconfig)
+        for module_name in ("det", "spp", "avg_pool", "upsample"):
+            quantizer.set_module_name(module_name, None)
     model = prepare_pt2e(model, quantizer)
     # calibration
     criterion = DetectorLoss(opt.device)
     move_exported_model_to_eval(model)
-    print("Start calibrating")
+    print("Start calibration")
     with torch.no_grad():
         pbar = tqdm(calib_loader, ncols=ncols)
         avg_iou, avg_obj, avg_cls, avg_loss, = 0.0, 0.0, 0.0, 0.0
@@ -92,8 +95,8 @@ if __name__ == "__main__":
                 f"cls{avg_cls/(ib+1):.2f} loss{avg_loss/(ib+1):.2f}")
     model_quant = convert_pt2e(deepcopy(model.cpu()), fold_quantize=True)
     model_quant = export(model_quant, dummy_inputs).module()
+    print_quant_stats(model_quant)
     stats = COCODetectionEvaluator(cfg.names).eval(
         val_loader, model_quant, ncols=ncols, colour="green")
-    # stats = {"coco/AP50": 0.0}
     torch.save(model_quant.state_dict(), str(savedir/
         f"{proj_name}_ap50,{stats['coco/AP50']:.6f}_ptq,{opt.target}.pth"))
