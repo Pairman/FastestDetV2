@@ -13,21 +13,21 @@ Even faster and stronger than [FastestDet](https://github.com/dog-qiuqiu/Fastest
 ## Benchmarks
 Network|mAPval 0.5|mAPval 0.5:0.95|Resolution|Run Time(4xCore)|Run Time(1xCore)|Params(M)
 :---:|:---:|:---:|:---:|:---:|:---:|:---:
-FastestDetV2|27.3%|13.8%|352X352|??ms|??ms|0.92M
-[FastestDet](https://github.com/dog-qiuqiu/FastestDet)|25.3%|13.0%|352X352|??ms|??ms|0.24M
-[nanodet_m](https://github.com/RangiLyu/nanodet)|-|20.6%|320X320|??ms|??ms|0.95M
-[yolox-nano](https://github.com/Megvii-BaseDetection/YOLOX)|-|25.8%|416X416|??ms|??ms|0.91M
-[yolov5s](https://github.com/ultralytics/yolov5)|56.8%|37.4%|640X640|??ms|??ms|7.2M
+[FastestDetV2](https://github.com/Pairman/FastestDetV2)|27.3%|13.8%|352X352|3.26ms|8.51ms|0.20M
+[FastestDet](https://github.com/dog-qiuqiu/FastestDet)|25.3%|13.0%|352X352|3.70ms|8.79ms|0.24M
+[nanodet_m](https://github.com/RangiLyu/nanodet)|-|20.6%|320X320|7.76ms|22.23ms|0.95M
+[yolox-nano](https://github.com/Megvii-BaseDetection/YOLOX)|-|25.8%|416X416|36.88ms|92.52ms|0.91M
+[yolov8n](https://github.com/ultralytics/ultralytics)|56.8%|37.4%|640X640|57.03ms|122.63ms|7.2M
 
-> Test platform EmbedFire LubanCat-4 RK3588S ARM 4\*Cortex-A76 + 4\*Cortex-A55 CPU，Based on [NCNN](https://github.com/Tencent/ncnn). CPU lock frequency 2.0GHz.
+> Tested on EmbedFire LubanCat-4 RK3588S ARM 4\*Cortex-A55 CPU @2.0GHz, using [NCNN](https://github.com/Tencent/ncnn).
 
 ## Multi-platform benchmarks
 Equipment|Computing backend|System|Framework|Run time(Single core)|Run time(Multi core)
 :---:|:---:|:---:|:---:|:---:|:---:
-EmbedFire LubanCat-4|RK3588 (CPU)|Linux (arm)|ncnn|??ms|??ms
-EmbedFire LubanCat-4 | RK3568 (NPU) |Linux (arm)|rknn|??ms|-
-Google Pixel 10 Pro XL|Tensor G5 (CPU)|Android (arm)|ncnn|??ms|??ms
-Dell Precision 3630 Tower|Core i9-9900 (CPU)|Linux (x86)|ncnn|??ms|??ms
+EmbedFire LubanCat-4|RK3588 (CPU)|Linux (arm)|NCNN|3.26ms|8.51ms
+EmbedFire LubanCat-4|RK3588 (CPU)|Linux (arm)|RKNN|??ms|??ms
+Google Pixel 10 Pro XL|Tensor G5 (CPU)|Android (arm)|NCNN|??ms|??ms
+Dell Precision 3630 Tower|Core i9-9900 (CPU)|Linux (x86)|NCNN|??ms|??ms
 
 # Usage
 
@@ -58,6 +58,14 @@ MODEL:
   NUM_CLASSES: 80
   # Input width and height
   INPUT_SIZE: [352, 352]
+  # Optional: backbone type
+  BACKBONE_TYPE: qamobileone  # or shufflenetv2 or hybrid
+  # Optional: MobileOne stage depths, channels and detection head width
+  BACKBONE_BLOCKS: [4, 6, 8, 3]
+  BACKBONE_CHANNELS: [24, 32, 64, 128]
+  HEAD_CHANNELS: 80
+  # Optional: only enable if the backbone architecture matches the pretrained qamobileone.pth
+  BACKBONE_PRETRAINED: false
 TRAIN:
   # Initial learning rate
   LEARNING_RATE: 0.001
@@ -78,6 +86,10 @@ Train from start:
 ```sh
 python3 train.py --configs CONFIGS_PATH
 ```
+
+For a V1-scale FastestDetV2 preset tuned for NCNN CPU latency, start from `configs/coco_lite.yaml`.
+For a ShuffleNetV2-style fast backbone preset, use `configs/coco-shuffle.yaml`.
+For a hybrid backbone preset (Shuffle early stages + MobileOne tail), use `configs/coco-hybrid.yaml`.
 
 Finetune with unfused weights:
 ```sh

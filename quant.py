@@ -25,7 +25,7 @@ if __name__ == "__main__":
     parser.add_argument("--device", type=str, default="cuda", help="device")
     # parser.add_argument("--weights", type=str, required=True, help=".pt weights, reparameterized")
     parser.add_argument("--weights", type=str, default="checkpoints/fastestdetv2_qamobileone_coco_ap50,0.233335_ep100.pth", help=".pt weights, reparameterized")
-    parser.add_argument("--configs", type=str, default=str(Path(__file__).parent/"configs/coco.yaml"), help=".yaml configs")
+    parser.add_argument("--configs", type=str, default=str(Path(__file__).parent/"configs/coco-s.yaml"), help=".yaml configs")
     parser.add_argument("--target", type=str, default="arm", help="target platform, arm or x86")
     opt = parser.parse_args()
     cfg = Config(opt.configs)
@@ -47,7 +47,7 @@ if __name__ == "__main__":
         shuffle=False, collate_fn=collate_fn, drop_last=True,
         num_workers=num_workers, persistent_workers=True)
     # model
-    model = FastestDetV2(cfg.num_classes,
+    model = FastestDetV2.from_config(cfg,
         load_weights=True, inference_mode=True).to(opt.device).eval()
     model.load_state_dict(torch.load(opt.weights))
     print(f"Loaded detector weights {opt.weights}")
@@ -94,9 +94,9 @@ if __name__ == "__main__":
             pbar.set_description(f"iou{avg_iou/(ib+1):.2f} obj{avg_obj/(ib+1):.2f} "
                 f"cls{avg_cls/(ib+1):.2f} loss{avg_loss/(ib+1):.2f}")
     model_quant = convert_pt2e(deepcopy(model.cpu()), fold_quantize=True)
-    model_quant = export(model_quant, dummy_inputs).module()
-    print_quant_stats(model_quant)
+    model_quant = export(model_quant, dummy_inputs)
+    print_quant_stats(model_quant.module())
     stats = COCODetectionEvaluator(cfg.names).eval(
-        val_loader, model_quant, ncols=ncols, colour="green")
-    torch.save(model_quant.state_dict(), str(savedir/
-        f"{proj_name}_ap50,{stats['coco/AP50']:.6f}_ptq,{opt.target}.pth"))
+        val_loader, model_quant.module(), ncols=ncols, colour="green")
+    torch.export.save(model_quant, str(savedir/
+        f"{proj_name}_ap50,{stats['coco/AP50']:.6f}_ptq,{opt.target}.pt"))

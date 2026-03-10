@@ -15,21 +15,32 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--device", type=str, default="cuda", help="device")
     parser.add_argument("--weights", type=str, default=None, help=".pt weights")
-    parser.add_argument("--configs", type=str, default=str(Path(__file__).parent/"configs/coco.yaml"), help=".yaml configs")
-    parser.add_argument("--image", type=str, required=True, help="input image")
+    parser.add_argument("--configs", type=str, default=str(Path(__file__).parent/"configs/coco-s.yaml"), help=".yaml configs")
+    parser.add_argument("--image", type=str, default=None, help="input image if not exporting")
     parser.add_argument("--result", type=str, default="result.png", help="input image")
     parser.add_argument("--conf-thres", type=float, default=0.65, help="confidence threshold")
+    parser.add_argument("--export", action="store_true", help="export torchscript")
     opt = parser.parse_args()
     cfg = Config(opt.configs)
     # model
-    model = FastestDetV2(cfg.num_classes, load_weights=True, inference_mode=True).to(opt.device)
+    model = FastestDetV2.from_config(cfg,
+        load_weights=True, inference_mode=True).to(opt.device)
     model.load_state_dict(torch.load(opt.weights))
     print(f"Loaded detector weights {opt.weights}")
     model.eval()
+    if opt.export:
+        export_path = Path(opt.weights).with_suffix(".pt")
+        dummy = torch.randn(1, 3, cfg.input_size[1], cfg.input_size[0],
+            device=opt.device)
+        with torch.no_grad():
+            traced = torch.jit.trace(model, dummy)
+            traced.save(str(export_path))
+        print(f"Saved torchscript to {export_path}")
+        sys.exit(0)
     # preproc
     print(f"Processing image {opt.image}")
     img0 = cv2.imread(opt.image)
-    img = cv2.resize(img0, (cfg.input_width, cfg.input_height))
+    img = cv2.resize(img0, cfg.input_size)
     img = torch.from_numpy(img).permute(2,0,1).unsqueeze(0)  # HWC->BCHW
     img = img.float().div(255.0).to(opt.device) # norm
     # warmup
@@ -44,15 +55,15 @@ if __name__ == "__main__":
     print(f"Inference time: {(t2 - t1) * 1000}ms")
     preds = process_preds(preds, conf_thres=opt.conf_thres)
     # visualize
-    with open(cfg.names) as f:
-        names = [l.strip() for l in f.readlines() if l.strip()]
+    names = cfg.names
     h0, w0, _ = img0.shape
-    h1, h1 = h0 / cfg.input_height, w0 / cfg.input_width
     for box in preds[0]:
         conf, cls = box[4], int(box[5])
         x1, y1 = int(box[0] * w0), int(box[1] * h0)
         x2, y2 = int(box[2] * w0), int(box[3] * h0)
-        cv2.rectangle(img0, (x1, y1), (x2, y2), (255, 255, 0), 1)
-        cv2.putText(img0, f"{cls} {names[cls]} {conf:.2f}", (x1, y1 - 5), 0, 0.6, (0, 255, 0), 1)
-    print(f"Saving result to {opt.result}")
+        cv2.rectangle(img0, (x1, y1), (x2, y2), (255, 255, 0), 2)
+        label = f"{cls} {names[cls]} {conf:.2f}"
+        cv2.putText(img0, label, (x1, y1 - 5), 0, 0.6, (0, 255, 0), 1, cv2.LINE_AA)
+        cv2.putText(img0, label, (x1 + 1, y1 - 5), 0, 0.6, (0, 255, 0), 1, cv2.LINE_AA)
     cv2.imwrite(opt.result, img0)
+    print(f"Saved result to {opt.result}")

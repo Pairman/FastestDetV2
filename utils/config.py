@@ -17,6 +17,9 @@ class Config:
 
         self.num_classes: int = data["MODEL"]["NUM_CLASSES"]
         self.input_size: list[int] = data["MODEL"]["INPUT_SIZE"]
+        self.backbone_blocks: list[int] = data["MODEL"]["BACKBONE_BLOCKS"]
+        self.backbone_channels: list[int] = data["MODEL"]["BACKBONE_CHANNELS"]
+        self.head_channels: int = data["MODEL"]["HEAD_CHANNELS"]
 
         self.learning_rate: float = data["TRAIN"]["LEARNING_RATE"]
         self.warmup_epoch: int = data["TRAIN"]["WARMUP_EPOCH"]

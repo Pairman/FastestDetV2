@@ -128,3 +128,25 @@ class QARepConv(nn.Module):
             if self.rbr_avg is not None:
                 y += self.rbr_avg(x)
         return self.bn(y)
+
+# https://github.com/apple/ml-mobileone/blob/b7f4e6d/mobileone.py#L279
+# https://github.com/glory-wan/TF-Net/blob/9647ca2/TFNet/mdoel/TFNet.py#L124
+class QAMobileOneBlock(nn.Module):
+    """Re-parameterizable depthwise + pointwise conv block."""
+
+    def __init__(self, in_channels: int, out_channels: int,
+        stride: int=1, inference_mode: bool=False):
+        super().__init__()
+        self.dw = QARepConv(in_channels, in_channels, 3,
+            stride=stride, padding=1, groups=in_channels,
+            inference_mode=inference_mode)
+        self.dw_act = nn.ReLU(inplace=True)
+        self.pw = QARepConv(in_channels, out_channels, 1,
+            stride=1, padding=0, groups=1,
+            inference_mode=inference_mode)
+
+    def forward(self, x):
+        x = self.dw(x)
+        x = self.dw_act(x)
+        x = self.pw(x)
+        return x

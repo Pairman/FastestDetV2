@@ -21,7 +21,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--device", type=str, default="cuda", help="device")
     parser.add_argument("--weights", type=str, default=None, help=".pt weights")
-    parser.add_argument("--configs", type=str, default=str(Path(__file__).parent/"configs/coco.yaml"), help=".yaml configs")
+    parser.add_argument("--configs", type=str, default=str(Path(__file__).parent/"configs/coco-h.yaml"), help=".yaml configs")
     parser.add_argument("--enable-wandb", action="store_true", help="log to wandb")
     opt = parser.parse_args()
     cfg = Config(opt.configs)
@@ -41,12 +41,12 @@ if __name__ == "__main__":
         num_workers=num_workers, persistent_workers=True)
     # model
     if opt.weights is not None:
-        model = FastestDetV2(cfg.num_classes,
+        model = FastestDetV2.from_config(cfg,
             load_weights=True, inference_mode=False).to(opt.device)
         model.load_state_dict(torch.load(opt.weights))
         print(f"Loaded detector weights {opt.weights}")
     else:
-        model = FastestDetV2(cfg.num_classes,
+        model = FastestDetV2.from_config(cfg,
             load_weights=False, inference_mode=False).to(opt.device)
     ema = EMA(model, decay=0.9999, device=opt.device)
     proj_name = f"{type(model).__name__.lower()}_{type(model.backbone).__name__.lower()}_{cfg_name}"
@@ -72,7 +72,8 @@ if __name__ == "__main__":
         # train
         model.train()
         model.is_detach_backbone = epoch < cfg.warmup_epoch
-        model.is_detach_agm = epoch >= (cfg.milestones[-1] if len(cfg.milestones) > 0 else 0.8 * cfg.end_epoch)
+        model.is_detach_agm = epoch >= (cfg.milestones[-1]
+            if len(cfg.milestones) > 0 else 0.8 * cfg.end_epoch)
         pbar = tqdm(train_loader, ncols=ncols)
         avg_iou, avg_obj, avg_cls, avg_loss, = 0.0, 0.0, 0.0, 0.0
         for ib, (imgs, labels) in enumerate(pbar):
@@ -99,7 +100,8 @@ if __name__ == "__main__":
         if opt.enable_wandb:
             wandb.log({"train/lr": optimizer.param_groups[0]["lr"],
                 "train/iou": avg_iou/(ib+1), "train/obj": avg_obj/(ib+1),
-                "train/cls": avg_cls/(ib+1), "train/loss": avg_loss/(ib+1)}, step=epoch)
+                "train/cls": avg_cls/(ib+1), "train/loss": avg_loss/(ib+1)},
+                step=epoch)
         scheduler.step()
         # eval
         if (epoch % 10 != 0 or epoch == 0) and epoch != cfg.end_epoch - 1:

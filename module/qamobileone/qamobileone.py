@@ -1,18 +1,17 @@
 from pathlib import Path
 import sys
+from os import path
 import torch
 import torch.nn as nn
 _ROOT = str(Path(__file__).resolve().parents[2])
 if not _ROOT in sys.path:
     sys.path.append(_ROOT)
-from module.repconv import QARepConv
+from module.repconv import QARepConv, QAMobileOneBlock
 
-# https://github.com/apple/ml-mobileone/blob/b7f4e6d/mobileone.py#L279
-# https://github.com/glory-wan/TF-Net/blob/9647ca2/TFNet/mdoel/TFNet.py#L124
 class QAMobileOne(nn.Module):
     """Quantization-aware mini MobileOne."""
-    def __init__(self, num_blocks_per_stage: list[int]=[1, 2, 3, 2],
-        base_channels: list[int]=[24, 48, 96, 192],
+    def __init__(self, num_blocks_per_stage: list[int]=[4, 6, 8, 3],
+        base_channels: list[int]=[24, 48, 64, 128],
         load_weights=False, inference_mode=False):
         super().__init__()
         self.inference_mode = inference_mode
@@ -21,8 +20,8 @@ class QAMobileOne(nn.Module):
             QARepConv(3, base_channels[0], 3,
                 stride=2, padding=1, inference_mode=inference_mode),
             nn.ReLU(inplace=True),
-            QARepConv(base_channels[0], base_channels[0], 3,
-                stride=1, padding=1, inference_mode=inference_mode),
+            QAMobileOneBlock(base_channels[0], base_channels[0],
+                stride=2, inference_mode=inference_mode),
             nn.ReLU(inplace=True))
         self.stage1 = self.make_stage(base_channels[0], base_channels[0], num_blocks_per_stage[0], 1)
         self.stage2 = self.make_stage(base_channels[0], base_channels[1], num_blocks_per_stage[1], 2)
@@ -36,12 +35,12 @@ class QAMobileOne(nn.Module):
     def make_stage(self, in_channels, out_channels, num_blocks, stride):
         """Construct a network stage with specified parameters."""
         layers = nn.Sequential()
-        layers.append(QARepConv(in_channels, out_channels, 3,
-            stride=stride, padding=1, inference_mode=self.inference_mode))
+        layers.append(QAMobileOneBlock(in_channels, out_channels,
+            stride=stride, inference_mode=self.inference_mode))
         layers.append(nn.ReLU(inplace=True))
         for _ in range(num_blocks - 1):
-            layers.append(QARepConv(out_channels, out_channels, 3,
-                stride=1, padding=1, inference_mode=self.inference_mode))
+            layers.append(QAMobileOneBlock(out_channels, out_channels,
+                stride=1, inference_mode=self.inference_mode))
             layers.append(nn.ReLU(inplace=True))
         return layers
 
@@ -56,8 +55,8 @@ class QAMobileOne(nn.Module):
 class QAMobileOneClassifier(nn.Module):
     """Classification model with QAMobileOne backbone."""
 
-    def __init__(self, num_blocks_per_stage=[1, 2, 3, 2],
-        base_channels=[24, 48, 96, 192], num_classes=1000, inference_mode=False):
+    def __init__(self, num_blocks_per_stage=[4, 6, 8, 3],
+        base_channels=[24, 48, 64, 128], num_classes=1000, inference_mode=False):
         super().__init__()
         self.backbone = QAMobileOne(num_blocks_per_stage, base_channels,
             inference_mode=inference_mode)
@@ -74,5 +73,5 @@ class QAMobileOneClassifier(nn.Module):
 
 if __name__ == "__main__":
     x = torch.randn(1, 3, 352, 352)
-    model = QAMobileOne(load_weights=True)
+    model = QAMobileOne(load_weights=False)
     print(*[p.shape for p in model(x)])
