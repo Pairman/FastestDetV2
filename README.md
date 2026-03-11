@@ -6,12 +6,12 @@ Even faster and stronger than [FastestDet](https://github.com/dog-qiuqiu/Fastest
 
 ## Improvements
 
-* Auxiliary Guidance Module for better accuracy
+* Auxiliary Guidance Module and SimOTA label assignment for better accuracy
 * Quantization-aware Reparameterizable Convolution Modules
 * Quantization-aware MobileOne Backbone
 
 ## Benchmarks
-Network|mAPval 0.5|mAPval 0.5:0.95|Resolution|Run Time(4xCore)|Run Time(1xCore)|Params(M)
+Model|mAP 0.5|mAP 0.5:0.95|Resolution|Inference time (4x core)|Inference time (1x core)|Params (M)
 :---:|:---:|:---:|:---:|:---:|:---:|:---:
 [FastestDetV2](https://github.com/Pairman/FastestDetV2)|27.3%|13.8%|352X352|3.26ms|8.51ms|0.20M
 [FastestDet](https://github.com/dog-qiuqiu/FastestDet)|25.3%|13.0%|352X352|3.70ms|8.79ms|0.24M
@@ -19,15 +19,16 @@ Network|mAPval 0.5|mAPval 0.5:0.95|Resolution|Run Time(4xCore)|Run Time(1xCore)|
 [yolox-nano](https://github.com/Megvii-BaseDetection/YOLOX)|-|25.8%|416X416|36.88ms|92.52ms|0.91M
 [yolov8n](https://github.com/ultralytics/ultralytics)|56.8%|37.4%|640X640|57.03ms|122.63ms|7.2M
 
-> Tested on EmbedFire LubanCat-4 RK3588S ARM 4\*Cortex-A55 CPU @2.0GHz, using [NCNN](https://github.com/Tencent/ncnn).
+> Tested on EmbedFire LubanCat-4 RK3588S ARM 4\*Cortex-A76 CPU@2.0GHz, using [NCNN](https://github.com/Tencent/ncnn).
 
 ## Multi-platform benchmarks
-Equipment|Computing backend|System|Framework|Run time(Single core)|Run time(Multi core)
+Device|Computing backend|System|Framework|Inference time (4x core)|Inference time (1x core)
 :---:|:---:|:---:|:---:|:---:|:---:
-EmbedFire LubanCat-4|RK3588 (CPU)|Linux (arm)|NCNN|3.26ms|8.51ms
-EmbedFire LubanCat-4|RK3588 (CPU)|Linux (arm)|RKNN|??ms|??ms
-Google Pixel 10 Pro XL|Tensor G5 (CPU)|Android (arm)|NCNN|??ms|??ms
-Dell Precision 3630 Tower|Core i9-9900 (CPU)|Linux (x86)|NCNN|??ms|??ms
+EmbedFire LubanCat-4|RK3588 (CPU@2.0GHz)|Linux (arm)|NCNN|3.26ms|8.51ms
+EmbedFire LubanCat-4|RK3588 (NPU)|Linux (arm)|RKNN|-|12.81ms
+Google Pixel 10 Pro XL|Tensor G5 (CPU)|Android (arm)|NCNN|2.28ms|3.98ms
+OnePlus|Snapdragon 845 (CPU)|Android (arm)|NCNN|9.39ms|5.37ms
+Dell Precision 3630 Tower|Core i9-9900 (CPU@800MHz)|Linux (x86)|NCNN|3.344m|7.943ms
 
 # Usage
 
@@ -114,15 +115,23 @@ python3 test.py --configs CONFIGS_PATH --weights WEIGHTS_PATH --image IMAGE_PATH
 
 ## Deployment
 
+### PT2E PTQ
+
 Post-training quantization for x86 (with ```X86InductorQuantizer```) or arm (with ```XNNPackQuantizer```) platforms, with fused weights:
 
 ```sh
 python3 quant.py --configs CONFIGS_PATH --weights WEIGHTS_PATH --image IMAGE_PATH --target TARGET_PLATFORM
 ```
 
-> Currently only ```X86InductorQuantizer``` in fully supported. ```XNNPackQuantizer``` has some issues on filtering submodules to quantize.
+### NCNN
 
-> Deployment using ONNX, NCNN and other methods will be available if I have time.
+Export to TorchScript with fused weights:
+
+```sh
+python test.py --weights WEIGHTS_PATH --export
+```
+
+Then follow [deploy/ncnn/README.md](https://github.com/Pairman/FastestDetV2/blob/main/deploy/ncnn/README.md)
 
 # Citation
 
@@ -138,7 +147,7 @@ python3 quant.py --configs CONFIGS_PATH --weights WEIGHTS_PATH --image IMAGE_PAT
 # References
 
 - FastestDet: https://github.com/dog-qiuqiu/FastestDet
-- Auxiliary Guidance Module: https://github.com/RangiLyu/nanodet
+- Auxiliary Guidance Module and NCNN deployment: https://github.com/RangiLyu/nanodet
 - Quantization-aware RepConv: https://github.com/meituan/YOLOv6
 - MobileOne: https://github.com/apple/ml-mobileone and https://github.com/glory-wan/TF-Net
 - NCNN: https://github.com/Tencent/ncnn

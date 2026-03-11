@@ -159,7 +159,7 @@ if __name__ == "__main__":
                 "train/loss": avg_loss, "train/top1": top1, "train/top5": top5}, step=epoch)
         scheduler.step()
         # eval
-        if (epoch % 10 != 0 or epoch == 0) and epoch != cfg["end_epoch"] - 1:
+        if (epoch + 1) % 5 != 0:
             continue
         with torch.no_grad():
             ema.model.eval()
@@ -177,11 +177,13 @@ if __name__ == "__main__":
                 top1, top5 = meter.get()
                 pbar.set_description(f"[Eval] "
                     f"loss{avg_loss:.2f} topk{top1:.3f},{top5:.3f}")
+        if opt.enable_wandb:
+            wandb.log({"val/loss": avg_loss, "val/top1": top1, "val/top5": top5}, step=epoch)
         if top1 > best_top1:
             best_top1 = top1
             torch.save(ema.model.state_dict(), str(savedir/
-                f"{proj_name}_acc{top1}_ep{epoch}_unfused.pth"))
-        if opt.enable_wandb:
-            wandb.log({"val/loss": avg_loss, "val/top1": top1, "val/top5": top5}, step=epoch)
+                f"{proj_name}_best_unfused.pth"))
+        torch.save(ema.model.state_dict(), str(savedir/
+            f"{proj_name}_last_unfused.pth"))
     if opt.enable_wandb:
         wandb.finish()

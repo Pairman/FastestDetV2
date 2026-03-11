@@ -3,7 +3,15 @@ __pycache__
 *.png
 *.jpg
 
+.pt
+.pth
+.bin
+.param
 checkpoints/
 wandb/
 
 .vscode/
+
+deploy/ncnn/ncnn/
+deploy/ncnn/*.bin
+deploy/ncnn/*.param

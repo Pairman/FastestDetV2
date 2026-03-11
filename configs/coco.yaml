@@ -14,12 +14,6 @@ MODEL:
   NUM_CLASSES: 80
   # Input width and height
   INPUT_SIZE: [352, 352]
-  # Blocks of each backbone stage
-  BACKBONE_BLOCKS: [4, 6, 8, 3]
-  # Channels of each backbone stage
-  BACKBONE_CHANNELS: [24, 48, 64, 128]
-  # Channels of each head stage
-  HEAD_CHANNELS: 80
 TRAIN:
   # Initial learning rate
   LEARNING_RATE: 0.001

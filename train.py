@@ -41,12 +41,12 @@ if __name__ == "__main__":
         num_workers=num_workers, persistent_workers=True)
     # model
     if opt.weights is not None:
-        model = FastestDetV2.from_config(cfg,
+        model = FastestDetV2(num_classes=cfg.num_classes,
             load_weights=True, inference_mode=False).to(opt.device)
         model.load_state_dict(torch.load(opt.weights))
         print(f"Loaded detector weights {opt.weights}")
     else:
-        model = FastestDetV2.from_config(cfg,
+        model = FastestDetV2(num_classes=cfg.num_classes,
             load_weights=False, inference_mode=False).to(opt.device)
     ema = EMA(model, decay=0.9999, device=opt.device)
     proj_name = f"{type(model).__name__.lower()}_{type(model.backbone).__name__.lower()}_{cfg_name}"
@@ -55,7 +55,7 @@ if __name__ == "__main__":
     params = [{"params": [], "weight_decay": 5e-4}, {"params": [], "weight_decay": 0.0}]
     for n, p in model.named_parameters():
         params[1 if p.ndim == 1 or n.endswith(".bias") else 0]["params"].append(p)
-    optimizer = torch.optim.SGD(params, lr=cfg.learning_rate, momentum=0.949)
+    optimizer = torch.optim.AdamW(params, lr=cfg.learning_rate, betas=(0.9, 0.999))
     scheduler = MultiStepCosineLR(optimizer, milestones=cfg.milestones)
     # wandb logger
     if opt.enable_wandb:
@@ -104,20 +104,24 @@ if __name__ == "__main__":
                 step=epoch)
         scheduler.step()
         # eval
-        if (epoch % 10 != 0 or epoch == 0) and epoch != cfg.end_epoch - 1:
+        if (epoch + 1) % 5 != 0:
             continue
         with torch.no_grad():
             ema.model.eval()
             model_eval = reparameterize_model(ema.model)
             stats = COCODetectionEvaluator(cfg.names, opt.device).eval(
                 val_loader, model_eval, ncols=ncols, colour="green")
-            if stats["coco/AP50"] > best_ap50:
-                best_ap50 = stats["coco/AP50"]
-                torch.save(model_eval.state_dict(), str(savedir/
-                    f"{proj_name}_ap50,{best_ap50:.6f}_ep{epoch}.pth"))
-                torch.save(ema.model.state_dict(), str(savedir/
-                    f"{proj_name}_ap50,{best_ap50:.6f}_ep{epoch}_unfused.pth"))
             if opt.enable_wandb:
                 wandb.log(stats, step=epoch)
+            if stats["coco/AP50"] > best_ap50:
+                best_ap50 = stats["coco/AP50"]
+                torch.save(model_eval.state_dict(),
+                    str(savedir/f"{proj_name}_best.pth"))
+                torch.save(ema.model.state_dict(),
+                    str(savedir/f"{proj_name}_best_unfused.pth"))
+            torch.save(model_eval.state_dict(),
+                str(savedir/f"{proj_name}_last.pth"))
+            torch.save(ema.model.state_dict(),
+                str(savedir/f"{proj_name}_last_unfused.pth"))
     if opt.enable_wandb:
         wandb.finish()

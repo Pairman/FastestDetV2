@@ -1,12 +1,32 @@
 from pathlib import Path
 import sys
-from os import path
 import torch
 import torch.nn as nn
 _ROOT = str(Path(__file__).resolve().parents[2])
 if not _ROOT in sys.path:
     sys.path.append(_ROOT)
-from module.repconv import QARepConv, QAMobileOneBlock
+from module.repconv import QARepConv
+
+# https://github.com/apple/ml-mobileone/blob/b7f4e6d/mobileone.py#L279
+class QAMobileOneBlock(nn.Module):
+    """Re-parameterizable depthwise + pointwise conv block."""
+
+    def __init__(self, in_channels: int, out_channels: int,
+        stride: int=1, inference_mode: bool=False):
+        super().__init__()
+        self.dw = QARepConv(in_channels, in_channels, 3,
+            stride=stride, padding=1, groups=in_channels,
+            inference_mode=inference_mode)
+        self.dw_act = nn.ReLU(inplace=True)
+        self.pw = QARepConv(in_channels, out_channels, 1,
+            stride=1, padding=0, groups=1,
+            inference_mode=inference_mode)
+
+    def forward(self, x):
+        x = self.dw(x)
+        x = self.dw_act(x)
+        x = self.pw(x)
+        return x
 
 class QAMobileOne(nn.Module):
     """Quantization-aware mini MobileOne."""
