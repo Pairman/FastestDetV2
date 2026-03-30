@@ -33,19 +33,3 @@ class MultiStepCosineLR(_LRScheduler):
         scale = 0.5 * (start_scale + end_scale) + \
                 0.5 * (start_scale - end_scale) * math.cos(math.pi * t / T)
         return [base_lr * scale for base_lr in self.base_lrs]
-
-if __name__ == "__main__":
-    from pathlib import Path
-    import matplotlib.pyplot as plt
-    model = torch.nn.Linear(10, 1)
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
-    scheduler = MultiStepCosineLR(optimizer, milestones=[100, 200, 250], gamma=0.1)
-    lrs = []
-    for _ in range(300):
-        optimizer.step()
-        lrs.append(scheduler.get_last_lr()[0])
-        scheduler.step()
-    plt.plot(lrs, marker=".")
-    plt.title("MultiStep Cosine LR Decay")
-    plt.grid(True)
-    plt.savefig(Path(__file__).with_suffix(".png"))

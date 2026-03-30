@@ -62,7 +62,7 @@ MODEL:
   # Optional: backbone type
   BACKBONE_TYPE: qamobileone  # or shufflenetv2 or hybrid
   # Optional: MobileOne stage depths, channels and detection head width
-  BACKBONE_BLOCKS: [4, 6, 8, 3]
+  BACKBONE_BLOCKS: [1, 2, 4, 3]
   BACKBONE_CHANNELS: [24, 32, 64, 128]
   HEAD_CHANNELS: 80
   # Optional: only enable if the backbone architecture matches the pretrained qamobileone.pth

@@ -10,7 +10,7 @@ from torch.export import export, export_for_training
 from torch.ao.quantization import move_exported_model_to_eval
 from torch.ao.quantization.quantize_pt2e import prepare_pt2e, convert_pt2e
 from tqdm import tqdm
-_ROOT = str(Path(__file__).resolve())
+_ROOT = str(Path(__file__).resolve().parent)
 if not _ROOT in sys.path:
     sys.path.append(_ROOT)
 from module.fastestdetv2 import FastestDetV2
@@ -23,9 +23,8 @@ from utils.quant import print_quant_stats
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--device", type=str, default="cuda", help="device")
-    # parser.add_argument("--weights", type=str, required=True, help=".pt weights, reparameterized")
-    parser.add_argument("--weights", type=str, default="checkpoints/fastestdetv2_qamobileone_coco_ap50,0.233335_ep100.pth", help=".pt weights, reparameterized")
-    parser.add_argument("--configs", type=str, default=str(Path(__file__).parent/"configs/coco-s.yaml"), help=".yaml configs")
+    parser.add_argument("--weights", type=str, default=str(Path(_ROOT)/"checkpoints/fastestdetv2_coco_best.pth"), help=".pt weights, reparameterized")
+    parser.add_argument("--configs", type=str, default=str(Path(_ROOT)/"configs/coco.yaml"), help=".yaml configs")
     parser.add_argument("--target", type=str, default="arm", help="target platform, arm or x86")
     opt = parser.parse_args()
     cfg = Config(opt.configs)
@@ -47,8 +46,7 @@ if __name__ == "__main__":
         shuffle=False, collate_fn=collate_fn, drop_last=True,
         num_workers=num_workers, persistent_workers=True)
     # model
-    model = FastestDetV2.from_config(cfg,
-        load_weights=True, inference_mode=True).to(opt.device).eval()
+    model = FastestDetV2(num_classes=cfg.num_classes, inference_mode=True).to(opt.device).eval()
     model.load_state_dict(torch.load(opt.weights))
     print(f"Loaded detector weights {opt.weights}")
     proj_name = f"{type(model).__name__.lower()}_{type(model.backbone).__name__.lower()}_{cfg_name}"

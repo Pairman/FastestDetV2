@@ -31,11 +31,19 @@ int main(int argc, char **argv)
 	int threads = 4;
 	int w = 352;
 	int h = 352;
-	// ./bench [ITERS] [THREADS]
+	// ./bench [ITERS] [THREADS] [PARAM] [BIN] [INPUT_BLOB] [OUTPUT_BLOB]
 	if (argc > 1)
 		iters = std::atoi(argv[1]);
 	if (argc > 2)
 		threads = std::atoi(argv[2]);
+	if (argc > 3)
+		param = argv[3];
+	if (argc > 4)
+		bin = argv[4];
+	if (argc > 5)
+		input_blob = argv[5];
+	if (argc > 6)
+		output_blob = argv[6];
 
 	ncnn::set_cpu_powersave(2);
 	ncnn::Net net;

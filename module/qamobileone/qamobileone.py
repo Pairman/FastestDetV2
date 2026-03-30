@@ -30,9 +30,8 @@ class QAMobileOneBlock(nn.Module):
 
 class QAMobileOne(nn.Module):
     """Quantization-aware mini MobileOne."""
-    def __init__(self, num_blocks_per_stage: list[int]=[4, 6, 8, 3],
-        base_channels: list[int]=[24, 48, 64, 128],
-        load_weights=False, inference_mode=False):
+    def __init__(self, num_blocks_per_stage: list[int]=[1, 2, 4, 3],
+        base_channels: list[int]=[24, 48, 96, 192], inference_mode=False):
         super().__init__()
         self.inference_mode = inference_mode
         self.base_channels = base_channels
@@ -43,14 +42,14 @@ class QAMobileOne(nn.Module):
             QAMobileOneBlock(base_channels[0], base_channels[0],
                 stride=2, inference_mode=inference_mode),
             nn.ReLU(inplace=True))
-        self.stage1 = self.make_stage(base_channels[0], base_channels[0], num_blocks_per_stage[0], 1)
-        self.stage2 = self.make_stage(base_channels[0], base_channels[1], num_blocks_per_stage[1], 2)
-        self.stage3 = self.make_stage(base_channels[1], base_channels[2], num_blocks_per_stage[2], 2)
-        self.stage4 = self.make_stage(base_channels[2], base_channels[3], num_blocks_per_stage[3], 2)
-        if load_weights:
-            weights = str(Path(__file__).resolve().parent/f"{type(self).__name__.lower()}.pth")
-            self.load_state_dict(torch.load(weights))
-            print(f"Loaded backbone weights {weights}")
+        self.stage1 = self.make_stage(base_channels[0], base_channels[0],
+            num_blocks_per_stage[0], 1)
+        self.stage2 = self.make_stage(base_channels[0], base_channels[1],
+            num_blocks_per_stage[1], 2)
+        self.stage3 = self.make_stage(base_channels[1], base_channels[2],
+            num_blocks_per_stage[2], 2)
+        self.stage4 = self.make_stage(base_channels[2], base_channels[3],
+            num_blocks_per_stage[3], 2)
 
     def make_stage(self, in_channels, out_channels, num_blocks, stride):
         """Construct a network stage with specified parameters."""
@@ -75,8 +74,8 @@ class QAMobileOne(nn.Module):
 class QAMobileOneClassifier(nn.Module):
     """Classification model with QAMobileOne backbone."""
 
-    def __init__(self, num_blocks_per_stage=[4, 6, 8, 3],
-        base_channels=[24, 48, 64, 128], num_classes=1000, inference_mode=False):
+    def __init__(self, num_blocks_per_stage=[1, 2, 4, 3],
+        base_channels=[24, 48, 96, 192], num_classes=1000, inference_mode=False):
         super().__init__()
         self.backbone = QAMobileOne(num_blocks_per_stage, base_channels,
             inference_mode=inference_mode)
@@ -85,13 +84,13 @@ class QAMobileOneClassifier(nn.Module):
         self.fc = nn.Linear(base_channels[-1], num_classes)
 
     def forward(self, x):
-        _, _, p3 = self.backbone(x) # (B, C, H, W)
-        y = self.gap(p3)            # (B, C, 1, 1)
+        _, _, p4 = self.backbone(x) # (B, C, H, W)
+        y = self.gap(p4)            # (B, C, 1, 1)
         y = y.view(y.size(0), -1)   # (B, C)
         y = self.fc(y)              # (B, CLS)
         return y
 
 if __name__ == "__main__":
     x = torch.randn(1, 3, 352, 352)
-    model = QAMobileOne(load_weights=False)
+    model = QAMobileOne()
     print(*[p.shape for p in model(x)])

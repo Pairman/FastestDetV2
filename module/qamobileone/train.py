@@ -4,7 +4,6 @@ from pathlib import Path
 from prefetch_generator import BackgroundGenerator
 from shutil import get_terminal_size
 import sys
-import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -37,27 +36,6 @@ val_transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
-
-def rand_cutmix(imgs: torch.Tensor, labels: torch.Tensor, p=0.1):
-    if np.random.random() > p:
-        return imgs, labels, labels, 1.0
-    b, _, h, w = imgs.shape
-    ids = torch.randperm(b)
-    lam = np.random.random()
-    # crop coords
-    cut_w = int(w * np.sqrt(1.0 - lam))
-    cut_h = int(h * np.sqrt(1.0 - lam))
-    cx = np.random.randint(w)
-    cy = np.random.randint(h)
-    x0 = np.clip(cx - cut_w // 2, 0, w)
-    y0 = np.clip(cy - cut_h // 2, 0, h)
-    x1 = np.clip(cx + cut_w // 2, 0, w)
-    y1 = np.clip(cy + cut_h // 2, 0, h)
-    # cut & paste
-    imgs[:, :, y0:y1, x0:x1] = imgs[ids, :, y0:y1, x0:x1]
-    # fix lambda
-    lam = 1.0 - ((x1 - x0) * (y1 - y0) / (h * w))
-    return imgs, labels, labels[ids], lam
 
 class ImageNetEvaluator:
     """Track Top-1 / Top-5 accuracy."""
@@ -99,7 +77,7 @@ if __name__ == "__main__":
     # model
     model = QAMobileOneClassifier(inference_mode=False).to(opt.device)
     ema = EMA(model, decay=0.9999, device=opt.device)
-    proj_name = f"{type(model).__name__.lower()}_{type(model.backbone).__name__.lower()}_{cfg['name']}"
+    proj_name = f"{type(model).__name__.lower()}_{cfg['name']}"
     # optimizer
     train_criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
     val_criterion = nn.CrossEntropyLoss()
@@ -127,15 +105,9 @@ if __name__ == "__main__":
         avg_loss, top1, top5 = 0, 0, 0
         for imgs, labels in pbar:
             imgs, labels = imgs.to(opt.device, non_blocking=True), labels.to(opt.device, non_blocking=True)
-            if epoch < 0.8 * cfg["end_epoch"]:
-                imgs, labels_a, labels_b, lam = rand_cutmix(imgs, labels)
             optimizer.zero_grad()
             outputs = model(imgs)
-            if epoch < 0.8 * cfg["end_epoch"]:
-                loss = lam * train_criterion(outputs, labels_a) + \
-                       (1 - lam) * train_criterion(outputs, labels_b)
-            else:
-                loss = train_criterion(outputs, labels)
+            loss = train_criterion(outputs, labels)
             loss.backward()
             optimizer.step()
             ema.update(model)
@@ -145,10 +117,7 @@ if __name__ == "__main__":
                 for g in optimizer.param_groups:
                     g["lr"] = curr_lr
             step += 1
-            if epoch < 0.8 * cfg["end_epoch"]:
-                meter.update(outputs, labels_a if lam > 0.5 else labels_b)
-            else:
-                meter.update(outputs, labels)
+            meter.update(outputs, labels)
             sum_loss += loss.item() * imgs.size(0)
             avg_loss = sum_loss / meter.total
             top1, top5 = meter.get()

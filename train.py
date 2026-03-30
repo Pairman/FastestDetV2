@@ -5,7 +5,7 @@ from shutil import get_terminal_size
 import sys
 import torch
 from tqdm import tqdm
-_ROOT = str(Path(__file__).resolve())
+_ROOT = str(Path(__file__).resolve().parent)
 if not _ROOT in sys.path:
     sys.path.append(_ROOT)
 from module.fastestdetv2 import FastestDetV2
@@ -21,7 +21,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--device", type=str, default="cuda", help="device")
     parser.add_argument("--weights", type=str, default=None, help=".pt weights")
-    parser.add_argument("--configs", type=str, default=str(Path(__file__).parent/"configs/coco-h.yaml"), help=".yaml configs")
+    parser.add_argument("--configs", type=str, default=str(Path(__file__).parent/"configs/coco.yaml"), help=".yaml configs")
     parser.add_argument("--enable-wandb", action="store_true", help="log to wandb")
     opt = parser.parse_args()
     cfg = Config(opt.configs)
@@ -41,15 +41,15 @@ if __name__ == "__main__":
         num_workers=num_workers, persistent_workers=True)
     # model
     if opt.weights is not None:
-        model = FastestDetV2(num_classes=cfg.num_classes,
-            load_weights=True, inference_mode=False).to(opt.device)
+        model = FastestDetV2(num_classes=cfg.num_classes, inference_mode=False).to(opt.device)
         model.load_state_dict(torch.load(opt.weights))
         print(f"Loaded detector weights {opt.weights}")
     else:
-        model = FastestDetV2(num_classes=cfg.num_classes,
-            load_weights=False, inference_mode=False).to(opt.device)
+        model = FastestDetV2(num_classes=cfg.num_classes, inference_mode=False).to(opt.device)
+        model.backbone.load_state_dict(torch.load(
+            str(Path(_ROOT)/"checkpoints/qamobileone.pth")))
     ema = EMA(model, decay=0.9999, device=opt.device)
-    proj_name = f"{type(model).__name__.lower()}_{type(model.backbone).__name__.lower()}_{cfg_name}"
+    proj_name = f"{type(model).__name__.lower()}_{cfg_name}"
     # optimizer
     criterion = DetectorLoss(opt.device)
     params = [{"params": [], "weight_decay": 5e-4}, {"params": [], "weight_decay": 0.0}]

@@ -3,7 +3,7 @@ from os import cpu_count
 from pathlib import Path
 import sys
 import torch
-_ROOT = str(Path(__file__).resolve())
+_ROOT = str(Path(__file__).resolve().parent)
 if not _ROOT in sys.path:
     sys.path.append(_ROOT)
 from module.fastestdetv2 import FastestDetV2
@@ -14,8 +14,8 @@ from utils.evaluator import COCODetectionEvaluator
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--device", type=str, default="cuda", help="device")
-    parser.add_argument("--weights", type=str, default=None, help=".pt weights")
-    parser.add_argument("--configs", type=str, default=str(Path(__file__).parent/"configs/coco-s.yaml"), help=".yaml configs")
+    parser.add_argument("--weights", type=str, default=str(Path(_ROOT)/"checkpoints/fastestdetv2_coco_best.pth"), help=".pt weights")
+    parser.add_argument("--configs", type=str, default=str(Path(_ROOT)/"configs/coco.yaml"), help=".yaml configs")
     opt = parser.parse_args()
     cfg = Config(opt.configs)
     # data loaders
@@ -25,7 +25,7 @@ if __name__ == "__main__":
         shuffle=False, collate_fn=collate_fn, drop_last=False,
         num_workers=num_workers, persistent_workers=True)
     # model
-    model = FastestDetV2.from_config(cfg, load_weights=True, inference_mode=True).to(opt.device)
+    model = FastestDetV2(num_classes=cfg.num_classes, inference_mode=True).to(opt.device)
     model.load_state_dict(torch.load(opt.weights))
     print(f"Loaded detector weights {opt.weights}")
     model.eval()
