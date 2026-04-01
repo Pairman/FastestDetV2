@@ -2,7 +2,6 @@ from pathlib import Path
 import sys
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 _ROOT = str(Path(__file__).resolve().parents[1])
 if not _ROOT in sys.path:
     sys.path.append(_ROOT)
@@ -11,7 +10,7 @@ from module.qamobileone.qamobileone import QAMobileOne
 from module.repconv import QARepConv
 
 class FastestDetV2(nn.Module):
-    def __init__(self, num_classes: int, backbone_blocks: list[int]=[1, 2, 4, 3],
+    def __init__(self, num_classes: int, backbone_blocks: list[int]=[4, 10, 4],
         backbone_channels: list[int]=[24, 48, 96, 192], head_channels: int=96,
         inference_mode: bool=False):
         super().__init__()

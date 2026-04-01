@@ -1,45 +1,14 @@
 from os import path, listdir
+from pathlib import Path
 import random
+import sys
 import cv2
 import numpy as np
 import torch
-
-def horizontal_flip(image, boxes):
-    boxes = boxes.copy()
-    boxes[:, 2] = 1 - boxes[:, 2] # flip cx
-    return image[:, ::-1], boxes
-
-def random_crop(image, boxes):
-    h, w, _ = image.shape
-    # random crop
-    cw, ch = random.randint(int(w * 0.75), w), random.randint(int(h * 0.75), h)
-    cx, cy = random.randint(0, w - cw), random.randint(0, h - ch)
-    roi = image[cy:cy + ch, cx:cx + cw]
-    roi_h, roi_w, _ = roi.shape
-    # bbox transform
-    xy = boxes[:, 2:4] * np.array([w, h])
-    wh = boxes[:, 4:6] * np.array([w, h])
-    xy = (xy - np.array([cx, cy])) / np.array([roi_w, roi_h])
-    wh = wh / np.array([roi_w, roi_h])
-    out = boxes.copy()
-    out[:, 2:4], out[:, 4:6] = xy, wh
-    return roi, out
-
-def random_narrow(image, boxes):
-    h, w, _ = image.shape
-    # random narrow
-    cw, ch = random.randint(w, int(w * 1.25)), random.randint(h, int(h * 1.25))
-    cx, cy = random.randint(0, cw - w), random.randint(0, ch - h)
-    bg = np.ones((ch, cw, 3), np.uint8) * 128
-    bg[cy:cy + h, cx:cx + w] = image
-    # bbox transform
-    xy = boxes[:, 2:4] * np.array([w, h])
-    wh = boxes[:, 4:6] * np.array([w, h])
-    xy = (xy + np.array([cx, cy])) / np.array([cw, ch])
-    wh = wh / np.array([cw, ch])
-    out = boxes.copy()
-    out[:, 2:4], out[:, 4:6] = xy, wh
-    return bg, out
+_ROOT = str(Path(__file__).resolve().parents[1])
+if not _ROOT in sys.path:
+    sys.path.append(_ROOT)
+from utils.augment import horizontal_flip, random_crop, random_narrow, hsv_jitter
 
 def collate_fn(batch):
     img, label = zip(*batch)
@@ -111,6 +80,7 @@ class Dataset():
                 img, label = random_crop(img, label)
             if random.getrandbits(1):
                 img, label = horizontal_flip(img, label)
+            img = hsv_jitter(img)
         # resize
         img = cv2.resize(img, self.imgsz, interpolation=cv2.INTER_LINEAR)
         # hwc->chw

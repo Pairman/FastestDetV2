@@ -30,7 +30,7 @@ class QAMobileOneBlock(nn.Module):
 
 class QAMobileOne(nn.Module):
     """Quantization-aware mini MobileOne."""
-    def __init__(self, num_blocks_per_stage: list[int]=[1, 2, 4, 3],
+    def __init__(self, num_blocks_per_stage: list[int]=[4, 10, 4],
         base_channels: list[int]=[24, 48, 96, 192], inference_mode=False):
         super().__init__()
         self.inference_mode = inference_mode
@@ -42,14 +42,12 @@ class QAMobileOne(nn.Module):
             QAMobileOneBlock(base_channels[0], base_channels[0],
                 stride=2, inference_mode=inference_mode),
             nn.ReLU(inplace=True))
-        self.stage1 = self.make_stage(base_channels[0], base_channels[0],
-            num_blocks_per_stage[0], 1)
-        self.stage2 = self.make_stage(base_channels[0], base_channels[1],
+        self.s1 = self.make_stage(base_channels[0], base_channels[1],
+            num_blocks_per_stage[0], 2)
+        self.s2 = self.make_stage(base_channels[1], base_channels[2],
             num_blocks_per_stage[1], 2)
-        self.stage3 = self.make_stage(base_channels[1], base_channels[2],
+        self.s3 = self.make_stage(base_channels[2], base_channels[3],
             num_blocks_per_stage[2], 2)
-        self.stage4 = self.make_stage(base_channels[2], base_channels[3],
-            num_blocks_per_stage[3], 2)
 
     def make_stage(self, in_channels, out_channels, num_blocks, stride):
         """Construct a network stage with specified parameters."""
@@ -65,16 +63,15 @@ class QAMobileOne(nn.Module):
 
     def forward(self, x):
         x = self.stem(x)
-        p1 = self.stage1(x)
-        p2 = self.stage2(p1)
-        p3 = self.stage3(p2)
-        p4 = self.stage4(p3)
-        return [p2, p3, p4]
+        p1 = self.s1(x)
+        p2 = self.s2(p1)
+        p3 = self.s3(p2)
+        return [p1, p2, p3]
 
 class QAMobileOneClassifier(nn.Module):
     """Classification model with QAMobileOne backbone."""
 
-    def __init__(self, num_blocks_per_stage=[1, 2, 4, 3],
+    def __init__(self, num_blocks_per_stage=[4, 10, 4],
         base_channels=[24, 48, 96, 192], num_classes=1000, inference_mode=False):
         super().__init__()
         self.backbone = QAMobileOne(num_blocks_per_stage, base_channels,

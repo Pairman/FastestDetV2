@@ -13,8 +13,8 @@ Even faster and stronger than [FastestDet](https://github.com/dog-qiuqiu/Fastest
 ## Benchmarks
 Model|mAP 0.5|mAP 0.5:0.95|Resolution|Inference time (4x core)|Inference time (1x core)|Params (M)
 :---:|:---:|:---:|:---:|:---:|:---:|:---:
-[FastestDetV2](https://github.com/Pairman/FastestDetV2)|27.3%|13.8%|352X352|3.26ms|8.51ms|0.20M
-[FastestDet](https://github.com/dog-qiuqiu/FastestDet)|25.3%|13.0%|352X352|3.70ms|8.79ms|0.24M
+[FastestDetV2](https://github.com/Pairman/FastestDetV2)|27.3%|13.8%|352X352|3.02ms|7.08ms|0.20M
+[FastestDet](https://github.com/dog-qiuqiu/FastestDet)|25.3%|13.0%|352X352|3.68ms|8.48ms|0.24M
 [nanodet_m](https://github.com/RangiLyu/nanodet)|-|20.6%|320X320|7.76ms|22.23ms|0.95M
 [yolox-nano](https://github.com/Megvii-BaseDetection/YOLOX)|-|25.8%|416X416|36.88ms|92.52ms|0.91M
 [yolov8n](https://github.com/ultralytics/ultralytics)|56.8%|37.4%|640X640|57.03ms|122.63ms|7.2M
@@ -24,11 +24,11 @@ Model|mAP 0.5|mAP 0.5:0.95|Resolution|Inference time (4x core)|Inference time (1
 ## Multi-platform benchmarks
 Device|Computing backend|System|Framework|Inference time (4x core)|Inference time (1x core)
 :---:|:---:|:---:|:---:|:---:|:---:
-EmbedFire LubanCat-4|RK3588 (CPU@2.0GHz)|Linux (arm)|NCNN|3.26ms|8.51ms
-EmbedFire LubanCat-4|RK3588 (NPU)|Linux (arm)|RKNN|-|12.81ms
-Google Pixel 10 Pro XL|Tensor G5 (CPU)|Android (arm)|NCNN|2.28ms|3.98ms
-OnePlus|Snapdragon 845 (CPU)|Android (arm)|NCNN|9.39ms|5.37ms
-Dell Precision 3630 Tower|Core i9-9900 (CPU@800MHz)|Linux (x86)|NCNN|3.344m|7.943ms
+EmbedFire LubanCat-4|RK3588 (CPU@2.0GHz)|Linux (arm)|NCNN|3.02ms|7.08ms
+EmbedFire LubanCat-4|RK3588 (NPU)|Linux (arm)|RKNN|-|??ms
+Google Pixel 10 Pro XL|Tensor G5 (CPU)|Android (arm)|NCNN|??ms|??ms
+OnePlus|Snapdragon 845 (CPU)|Android (arm)|NCNN|??ms|??ms
+Dell Precision 3630 Tower|Core i9-9900 (CPU@800MHz)|Linux (x86)|NCNN|??m|??ms
 
 # Usage
 
@@ -59,14 +59,6 @@ MODEL:
   NUM_CLASSES: 80
   # Input width and height
   INPUT_SIZE: [352, 352]
-  # Optional: backbone type
-  BACKBONE_TYPE: qamobileone  # or shufflenetv2 or hybrid
-  # Optional: MobileOne stage depths, channels and detection head width
-  BACKBONE_BLOCKS: [1, 2, 4, 3]
-  BACKBONE_CHANNELS: [24, 32, 64, 128]
-  HEAD_CHANNELS: 80
-  # Optional: only enable if the backbone architecture matches the pretrained qamobileone.pth
-  BACKBONE_PRETRAINED: false
 TRAIN:
   # Initial learning rate
   LEARNING_RATE: 0.001

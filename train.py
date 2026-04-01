@@ -52,7 +52,7 @@ if __name__ == "__main__":
     proj_name = f"{type(model).__name__.lower()}_{cfg_name}"
     # optimizer
     criterion = DetectorLoss(opt.device)
-    params = [{"params": [], "weight_decay": 5e-4}, {"params": [], "weight_decay": 0.0}]
+    params = [{"params": [], "weight_decay": 7e-4}, {"params": [], "weight_decay": 0.0}]
     for n, p in model.named_parameters():
         params[1 if p.ndim == 1 or n.endswith(".bias") else 0]["params"].append(p)
     optimizer = torch.optim.AdamW(params, lr=cfg.learning_rate, betas=(0.9, 0.999))
