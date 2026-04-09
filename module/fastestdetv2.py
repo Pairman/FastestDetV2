@@ -6,15 +6,16 @@ _ROOT = str(Path(__file__).resolve().parents[1])
 if not _ROOT in sys.path:
     sys.path.append(_ROOT)
 from module.layers import DetectHead, SPP, SPP
-from module.qamobileone.qamobileone import QAMobileOne
+from module.qamobileone import QAMobileOne
 from module.repconv import QARepConv
 
 class FastestDetV2(nn.Module):
-    def __init__(self, num_classes: int, backbone_blocks: list[int]=[4, 10, 4],
+    def __init__(self, num_classes: int=80, backbone_blocks: list[int]=[4, 8, 4],
         backbone_channels: list[int]=[24, 48, 96, 192], head_channels: int=96,
-        inference_mode: bool=False):
+        inference_mode: bool=False, enable_agm: bool=True):
         super().__init__()
         self.inference_mode = inference_mode
+        self.enable_agm = not inference_mode and enable_agm
         self.is_detach_backbone = False
         self.is_detach_agm = False
         self.backbone = QAMobileOne(backbone_blocks, backbone_channels,
@@ -24,18 +25,18 @@ class FastestDetV2(nn.Module):
         self.avg_pool = nn.AvgPool2d(kernel_size=3, stride=2, padding=1)
         self.spp = SPP(channels, head_channels, inference_mode)
         self.det = DetectHead(head_channels, num_classes, inference_mode)
-        # auxiliary guidance branch
+        # assign guidance module
         # https://github.com/RangiLyu/nanodet/blob/be9b4a9/nanodet/model/arch/nanodet_plus.py#L35
-        if not self.inference_mode:
-            self.aux_spp = SPP(channels, channels//2, inference_mode)
+        if self.enable_agm:
+            aux_channels = head_channels * 3 // 2
+            self.aux_spp = SPP(channels, aux_channels, inference_mode)
             self.aux_det = nn.Sequential(
-                QARepConv(channels//2, channels//2, 3,
-                    stride=1, padding=1, inference_mode=False),
+                # use qarepconv since it's faster at training-time
+                QARepConv(aux_channels, aux_channels, 3, stride=1, padding=1),
                 nn.SiLU(),
-                QARepConv(channels//2, channels//2, 3,
-                    stride=1, padding=1, inference_mode=False),
+                QARepConv(aux_channels, aux_channels, 3, stride=1, padding=1),
                 nn.SiLU(),
-                DetectHead(channels//2, num_classes, inference_mode=False))
+                DetectHead(aux_channels, num_classes))
 
     def forward(self, x):
         p2, p3, p4 = self.backbone(x)
@@ -44,7 +45,7 @@ class FastestDetV2(nn.Module):
         p = torch.cat((self.avg_pool(p2), p3, self.upsample(p4)), dim=1)
         y = self.spp(p)
         y = self.det(y)
-        if not self.inference_mode:
+        if self.enable_agm:
             aux_x = p.detach() if self.is_detach_agm else p
             aux_y = self.aux_spp(aux_x)
             aux_y = self.aux_det(aux_y)
@@ -55,8 +56,9 @@ class FastestDetV2(nn.Module):
         """Re-parameterization for inference."""
         if self.inference_mode:
             return
+        if self.enable_agm:
+            del self.aux_spp, self.aux_det
         self.inference_mode = True
-        del self.aux_spp, self.aux_det
 
 if __name__ == "__main__":
     model = FastestDetV2(80)

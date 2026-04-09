@@ -40,23 +40,28 @@ if __name__ == "__main__":
         shuffle=False, collate_fn=collate_fn, drop_last=False,
         num_workers=num_workers, persistent_workers=True)
     # model
+    model = FastestDetV2(num_classes=cfg.num_classes).to(opt.device)
     if opt.weights is not None:
-        model = FastestDetV2(num_classes=cfg.num_classes, inference_mode=False).to(opt.device)
-        model.load_state_dict(torch.load(opt.weights))
-        print(f"Loaded detector weights {opt.weights}")
+        w = torch.load(opt.weights)
+        ik = model.load_state_dict(w, strict=False)
+        is_bb = len(ik.missing_keys) or len(ik.unexpected_keys)
+        if is_bb:
+            model.backbone.load_state_dict({k[len("backbone."):]: v
+                for k, v in w.items() if k.startswith("backbone.")})
+        print(f"Loaded detector {'backbone from' if is_bb else 'weights'} {opt.weights}")
     else:
-        model = FastestDetV2(num_classes=cfg.num_classes, inference_mode=False).to(opt.device)
         model.backbone.load_state_dict(torch.load(
             str(Path(_ROOT)/"checkpoints/qamobileone.pth")))
     ema = EMA(model, decay=0.9999, device=opt.device)
     proj_name = f"{type(model).__name__.lower()}_{cfg_name}"
     # optimizer
     criterion = DetectorLoss(opt.device)
-    params = [{"params": [], "weight_decay": 7e-4}, {"params": [], "weight_decay": 0.0}]
+    params = [{"params": [], "weight_decay": 5e-4}, {"params": [], "weight_decay": 0.0}]
     for n, p in model.named_parameters():
         params[1 if p.ndim == 1 or n.endswith(".bias") else 0]["params"].append(p)
     optimizer = torch.optim.AdamW(params, lr=cfg.learning_rate, betas=(0.9, 0.999))
-    scheduler = MultiStepCosineLR(optimizer, milestones=cfg.milestones)
+    scheduler = MultiStepCosineLR(optimizer, milestones=cfg.milestones, gamma=0.15)
+    scaler = torch.amp.GradScaler("cuda")
     # wandb logger
     if opt.enable_wandb:
         import wandb
@@ -68,21 +73,23 @@ if __name__ == "__main__":
     warmup_steps = cfg.warmup_epoch * len(train_loader)
     best_ap50 = 0.0
     print(f"Start training for {cfg.end_epoch} epochs")
-    for epoch in range(cfg.end_epoch):
+    for epoch in range(1, cfg.end_epoch + 1):
         # train
         model.train()
-        model.is_detach_backbone = epoch < cfg.warmup_epoch
-        model.is_detach_agm = epoch >= (cfg.milestones[-1]
+        model.is_detach_backbone = epoch <= cfg.warmup_epoch
+        model.is_detach_agm = epoch > (cfg.milestones[-1]
             if len(cfg.milestones) > 0 else 0.8 * cfg.end_epoch)
         pbar = tqdm(train_loader, ncols=ncols)
         avg_iou, avg_obj, avg_cls, avg_loss, = 0.0, 0.0, 0.0, 0.0
         for ib, (imgs, labels) in enumerate(pbar):
             imgs, labels = imgs.to(opt.device).float() / 255.0, labels.to(opt.device)
             optimizer.zero_grad()
-            outputs = model(imgs)
-            iou, obj, cls, loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
+            with torch.amp.autocast("cuda"):
+                outputs = model(imgs)
+                iou, obj, cls, loss = criterion(outputs, labels)
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
             ema.update(model)
             # warmup
             if step < warmup_steps:
@@ -104,24 +111,25 @@ if __name__ == "__main__":
                 step=epoch)
         scheduler.step()
         # eval
-        if (epoch + 1) % 5 != 0:
+        torch.save(ema.model.state_dict(), str(savedir/f"{proj_name}_last_unfused.pth"))
+        if epoch % 5 != 0 and epoch != cfg.end_epoch:
             continue
         with torch.no_grad():
             ema.model.eval()
             model_eval = reparameterize_model(ema.model)
+            model_eval.enable_agm = False
             stats = COCODetectionEvaluator(cfg.names, opt.device).eval(
                 val_loader, model_eval, ncols=ncols, colour="green")
             if opt.enable_wandb:
                 wandb.log(stats, step=epoch)
+            bf_path = savedir/f"{proj_name}_best.pth"
+            bu_path = savedir/f"{proj_name}_best_unfused.pth"
             if stats["coco/AP50"] > best_ap50:
                 best_ap50 = stats["coco/AP50"]
-                torch.save(model_eval.state_dict(),
-                    str(savedir/f"{proj_name}_best.pth"))
-                torch.save(ema.model.state_dict(),
-                    str(savedir/f"{proj_name}_best_unfused.pth"))
-            torch.save(model_eval.state_dict(),
-                str(savedir/f"{proj_name}_last.pth"))
-            torch.save(ema.model.state_dict(),
-                str(savedir/f"{proj_name}_last_unfused.pth"))
+                torch.save(model_eval.state_dict(), str(bf_path))
+                torch.save(ema.model.state_dict(), str(bu_path))
+                if opt.enable_wandb:
+                    wandb.save(str(bf_path), policy="now")
+                    wandb.save(str(bu_path), policy="now")
     if opt.enable_wandb:
         wandb.finish()

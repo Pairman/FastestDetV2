@@ -27,8 +27,8 @@ int main(int argc, char **argv)
 	const char *bin = "fastestdetv2.bin";
 	const char *input_blob = "in0";
 	const char *output_blob = "out0";
-	int iters = 300;
-	int threads = 4;
+	int iters = 5000;
+	int threads = 1;
 	int w = 352;
 	int h = 352;
 	// ./bench [ITERS] [THREADS] [PARAM] [BIN] [INPUT_BLOB] [OUTPUT_BLOB]

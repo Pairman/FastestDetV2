@@ -141,9 +141,14 @@ class DetectorLoss(nn.Module):
         obj_prob = pred_obj.unsqueeze(0)
         cls_cost = -(cls_prob * obj_prob).clamp(min=1e-7).log()
         iou_cost = -pairwise_ious.log()
-        in_boxes_and_center = in_boxes & in_centers
-        cost = cls_cost + self.iou_weight * iou_cost + \
-            (~in_boxes_and_center).float() * 100000.0
+        # relax geometry prior and reduce iou cost weight for small objects
+        small_gt = gt_box[:, 2:4].amin(dim=1) < 2.0
+        valid_mask = in_boxes & in_centers
+        valid_mask[small_gt] = in_boxes[small_gt] | in_centers[small_gt]
+        iou_weight = gt_box.new_full((gt_box.size(0), 1), self.iou_weight)
+        iou_weight[small_gt] = self.iou_weight * (2.0 / 3.0)
+        cost = cls_cost + iou_weight * iou_cost + \
+            (~valid_mask).float() * 100000.0
         return pairwise_ious, cost
 
     def dynamic_k_matching(self, cost, pairwise_ious):
@@ -193,7 +198,8 @@ class DetectorLoss(nn.Module):
             gt_cls_i = gt[:, 1].long()
             scale = gt.new_tensor([W, H, W, H])
             gt_box_i = gt[:, 2:6] * scale
-            # simota. https://github.com/open-mmlab/mmyolo/blob/8c4d9dc/mmyolo/models/task_modules/assigners/batch_yolov7_assigner.py#L301
+            # simota
+            # https://github.com/open-mmlab/mmyolo/blob/8c4d9dc/mmyolo/models/task_modules/assigners/batch_yolov7_assigner.py#L301
             # geometric filter before cost calculation
             candidate_mask, in_boxes, in_centers = self.get_candidate_mask(gt_box_i, points, W, H)
             candidate_index = candidate_mask.nonzero(as_tuple=False).squeeze(1)

@@ -8,7 +8,7 @@ if not _ROOT in sys.path:
 from module.repconv import QARepConv
 
 class Head(nn.Module):
-    def __init__(self, in_channels, out_channels, inference_mode=False):
+    def __init__(self, in_channels: int, out_channels: int, inference_mode=False):
         super().__init__()
         self.conv5x5 = QARepConv(in_channels, in_channels, 5,
             stride=1, padding=2, groups=in_channels, inference_mode=inference_mode)
@@ -16,7 +16,7 @@ class Head(nn.Module):
         self.conv1x1 = QARepConv(in_channels, out_channels, 1,
             stride=1, padding=0, groups=1, inference_mode=inference_mode)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         x = self.conv5x5(x)
         x = self.relu(x)
         x = self.conv1x1(x)
@@ -34,7 +34,7 @@ class DetectHead(nn.Module):
         self.sigmoid = nn.Sigmoid()
         self.softmax = nn.Softmax(dim=1)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         x = self.conv1x1(x)
         x = self.relu(x)
         obj = self.sigmoid(self.obj_head(x))
@@ -43,7 +43,7 @@ class DetectHead(nn.Module):
         return torch.cat((obj, reg, cls), dim=1)
 
 class SPP(nn.Module):
-    def __init__(self, in_channels, out_channels, inference_mode=False):
+    def __init__(self, in_channels: int, out_channels: int, inference_mode=False):
         super().__init__()
         self.stem = QARepConv(in_channels, out_channels, 1,
             stride=1, padding=0, groups=1, inference_mode=inference_mode)
@@ -65,7 +65,7 @@ class SPP(nn.Module):
             layers.append(nn.ReLU(inplace=True))
         return nn.Sequential(*layers)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         y0 = self.stem(x)
         y1 = self.s1(y0)
         y2 = self.s2(y0)

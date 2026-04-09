@@ -7,7 +7,7 @@ import torch
 _ROOT = str(Path(__file__).resolve().parent)
 if not _ROOT in sys.path:
     sys.path.append(_ROOT)
-from module.fastestdetv2 import FastestDetV2, FastestDetV2S
+from module.fastestdetv2 import FastestDetV2
 from utils.config import Config
 from utils.postproc import process_preds
 

@@ -7,8 +7,8 @@ import torch.nn.functional as F
 class QARepConv(nn.Module):
     """Quantization-aware re-parameterizable Conv2d + BN2d block."""
     def __init__(self, in_channels: int, out_channels: int, kernel_size: int,
-        stride=1, padding=0, dilation=1, groups=1,
-        num_conv_branches=1, inference_mode=False):
+        stride=1, padding=0, dilation=1, groups=1, num_conv_branches=1,
+        inference_mode=False):
         super().__init__()
         self.inference_mode = inference_mode
         if self.inference_mode:

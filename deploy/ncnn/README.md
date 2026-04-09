@@ -1,4 +1,6 @@
-## Model Conversion
+## NCNN Deployment
+
+### Model Conversion
 
 Install [NCNN](https://github.com/Tencent/ncnn) and [PNNX](https://github.com/pnnx/pnnx):
 
@@ -12,7 +14,7 @@ Convert ```.pt``` TorchScript to ```*.ncnn.param``` and ```*.ncnn.bin``` using P
 pnnx TORCHSCRIPT_PATH  ncnnparam=fastestdetv2.param ncnnbin=fastestdetv2.bin
 ```
 
-## Building
+### Building
 
 Build OpenCV library (https://docs.opencv.org/4.x/d7/d9f/tutorial_linux_install.html):
 
@@ -51,27 +53,27 @@ Configure:
 cmake -S . -B build -DCMAKE_PREFIX_PATH=ncnn/install
 ```
 
-### Build benchmark:
+#### Build benchmark:
 
 ```sh
 cmake --build build --target bench -j
 ```
 
-### Build test:
+#### Build test:
 
 ```sh
 cmake --build build --target test -j
 ```
 
-## Running
+### Running
 
-### Run benchmark:
+#### Run benchmark:
 
 ```sh
 ./build/bench [ITERS] [THREADS]
 ```
 
-### Run test:
+#### Run test:
 
 ```sh
 ./build/test [IN_IMG] [OUTPUT_IMG]

@@ -74,11 +74,11 @@ class Dataset():
         label = np.pad(label, ((0, 0), (1, 0)), constant_values=0)
         # augmentation
         if self.aug:
-            if random.getrandbits(1):
+            if random.random() > 0.5:
                 img, label = random_narrow(img, label)
             else:
                 img, label = random_crop(img, label)
-            if random.getrandbits(1):
+            if random.random() > 0.5:
                 img, label = horizontal_flip(img, label)
             img = hsv_jitter(img)
         # resize

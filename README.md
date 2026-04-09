@@ -6,14 +6,14 @@ Even faster and stronger than [FastestDet](https://github.com/dog-qiuqiu/Fastest
 
 ## Improvements
 
-* Auxiliary Guidance Module and SimOTA label assignment for better accuracy
+* Assign Guidance Module and SimOTA label assignment for better accuracy
 * Quantization-aware Reparameterizable Convolution Modules
 * Quantization-aware MobileOne Backbone
 
 ## Benchmarks
 Model|mAP 0.5|mAP 0.5:0.95|Resolution|Inference time (4x core)|Inference time (1x core)|Params (M)
 :---:|:---:|:---:|:---:|:---:|:---:|:---:
-[FastestDetV2](https://github.com/Pairman/FastestDetV2)|27.3%|13.8%|352X352|3.02ms|7.08ms|0.20M
+[FastestDetV2](https://github.com/Pairman/FastestDetV2)|27.3%|13.8%|352X352|2.83ms|6.95ms|0.20M
 [FastestDet](https://github.com/dog-qiuqiu/FastestDet)|25.3%|13.0%|352X352|3.68ms|8.48ms|0.24M
 [nanodet_m](https://github.com/RangiLyu/nanodet)|-|20.6%|320X320|7.76ms|22.23ms|0.95M
 [yolox-nano](https://github.com/Megvii-BaseDetection/YOLOX)|-|25.8%|416X416|36.88ms|92.52ms|0.91M
@@ -24,7 +24,7 @@ Model|mAP 0.5|mAP 0.5:0.95|Resolution|Inference time (4x core)|Inference time (1
 ## Multi-platform benchmarks
 Device|Computing backend|System|Framework|Inference time (4x core)|Inference time (1x core)
 :---:|:---:|:---:|:---:|:---:|:---:
-EmbedFire LubanCat-4|RK3588 (CPU@2.0GHz)|Linux (arm)|NCNN|3.02ms|7.08ms
+EmbedFire LubanCat-4|RK3588 (CPU@2.0GHz)|Linux (arm)|NCNN|2.83ms|6.95ms
 EmbedFire LubanCat-4|RK3588 (NPU)|Linux (arm)|RKNN|-|??ms
 Google Pixel 10 Pro XL|Tensor G5 (CPU)|Android (arm)|NCNN|??ms|??ms
 OnePlus|Snapdragon 845 (CPU)|Android (arm)|NCNN|??ms|??ms
@@ -139,7 +139,8 @@ Then follow [deploy/ncnn/README.md](https://github.com/Pairman/FastestDetV2/blob
 # References
 
 - FastestDet: https://github.com/dog-qiuqiu/FastestDet
-- Auxiliary Guidance Module and NCNN deployment: https://github.com/RangiLyu/nanodet
-- Quantization-aware RepConv: https://github.com/meituan/YOLOv6
+- Assign Guidance Module and NCNN deployment: https://github.com/RangiLyu/nanodet
+- SimOTA label assignment: https://github.com/open-mmlab/mmyolo
 - MobileOne: https://github.com/apple/ml-mobileone and https://github.com/glory-wan/TF-Net
+- Quantization-aware RepConv: https://github.com/meituan/YOLOv6
 - NCNN: https://github.com/Tencent/ncnn
