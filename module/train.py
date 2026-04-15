@@ -22,10 +22,10 @@ class DataLoaderX(DataLoader):
         return BackgroundGenerator(super().__iter__())
 
 def get_train_transform(epoch: int, end_epoch: int):
-    imgsz = 160 if epoch <= end_epoch*0.13 else 192 if epoch <= end_epoch*0.39 else 224
+    imgsz = int(160 + 96 * min(1, epoch / (0.8 * end_epoch)) ** 0.5)
     return transforms.Compose([
-        transforms.RandomResizedCrop(imgsz, (0.08, 1.0), (0.75, 1.33)),
-        transforms.ColorJitter(0.2, 0.2, 0.2, 0.05),
+        transforms.RandomResizedCrop(imgsz, (0.6, 1.0), (0.7, 1.3)),
+        transforms.ColorJitter(0.2, 0.2, 0.2, 0.02),
         transforms.RandomHorizontalFlip(0.5),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
@@ -37,27 +37,6 @@ val_transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
-
-def rand_cutmix(imgs: torch.Tensor, labels: torch.Tensor, p=0.2):
-    if np.random.random() > p:
-        return imgs, labels, labels, 1.0
-    b, _, h, w = imgs.shape
-    ids = torch.randperm(b, device=labels.device)
-    lam = np.random.random()
-    # crop coords
-    cut_w = int(w * np.sqrt(1.0 - lam))
-    cut_h = int(h * np.sqrt(1.0 - lam))
-    cx = np.random.randint(w)
-    cy = np.random.randint(h)
-    x0 = np.clip(cx - cut_w // 2, 0, w)
-    y0 = np.clip(cy - cut_h // 2, 0, h)
-    x1 = np.clip(cx + cut_w // 2, 0, w)
-    y1 = np.clip(cy + cut_h // 2, 0, h)
-    # cut & paste
-    imgs[:, :, y0:y1, x0:x1] = imgs[ids, :, y0:y1, x0:x1]
-    # fix lambda
-    lam = 1.0 - ((x1 - x0) * (y1 - y0) / (h * w))
-    return imgs, labels, labels[ids], lam
 
 class ImageNetEvaluator:
     """Track Top-1 / Top-5 accuracy."""
@@ -98,12 +77,12 @@ if __name__ == "__main__":
     val_loader = DataLoaderX(val_dataset, batch_size=cfg["batch_size"], shuffle=False, num_workers=num_workers, pin_memory=True)
     # model
     model = QAMobileOneClassifier().to(opt.device)
-    ema = EMA(model, decay=0.9999, device=opt.device)
+    ema = EMA(model, decay=0.9998, device=opt.device)
     proj_name = f"{type(model).__name__.lower()}_{cfg['name']}"
     # optimizer
     train_criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
     val_criterion = nn.CrossEntropyLoss()
-    params = [{"params": [], "weight_decay": 1e-4}, {"params": [], "weight_decay": 0.0}]
+    params = [{"params": [], "weight_decay": 1.2e-4}, {"params": [], "weight_decay": 0.0}]
     for n, p in model.named_parameters():
         params[1 if p.ndim == 1 or n.endswith(".bias") else 0]["params"].append(p)
     optimizer = torch.optim.SGD(params, lr=cfg["learning_rate"], momentum=0.9)
@@ -128,16 +107,10 @@ if __name__ == "__main__":
         avg_loss, top1, top5 = 0, 0, 0
         for imgs, labels in pbar:
             imgs, labels = imgs.to(opt.device, non_blocking=True), labels.to(opt.device, non_blocking=True)
-            if epoch < 0.8 * cfg["end_epoch"]:
-                imgs, labels_a, labels_b, lam = rand_cutmix(imgs, labels)
             optimizer.zero_grad()
             with torch.amp.autocast("cuda"):
                 outputs = model(imgs)
-                if epoch < 0.8 * cfg["end_epoch"]:
-                    loss = lam * train_criterion(outputs, labels_a) + \
-                        (1 - lam) * train_criterion(outputs, labels_b)
-                else:
-                    loss = train_criterion(outputs, labels)
+                loss = train_criterion(outputs, labels)
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
@@ -148,10 +121,7 @@ if __name__ == "__main__":
                 for g in optimizer.param_groups:
                     g["lr"] = curr_lr
             step += 1
-            if epoch < 0.8 * cfg["end_epoch"]:
-                meter.update(outputs, labels_a if lam > 0.5 else labels_b)
-            else:
-                meter.update(outputs, labels)
+            meter.update(outputs, labels)
             sum_loss += loss.item() * imgs.size(0)
             avg_loss = sum_loss / meter.total
             top1, top5 = meter.get()

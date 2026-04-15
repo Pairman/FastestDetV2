@@ -5,7 +5,7 @@ import torch.nn as nn
 _ROOT = str(Path(__file__).resolve().parents[1])
 if not _ROOT in sys.path:
     sys.path.append(_ROOT)
-from module.layers import DetectHead, SPP, SPP
+from module.detector import DetectHead, SPP
 from module.qamobileone import QAMobileOne
 from module.repconv import QARepConv
 
@@ -40,7 +40,7 @@ class FastestDetV2(nn.Module):
 
     def forward(self, x):
         p2, p3, p4 = self.backbone(x)
-        if not self.inference_mode and self.is_detach_backbone:
+        if self.training and self.is_detach_backbone:
             p2, p3, p4 = p2.detach(), p3.detach(), p4.detach()
         p = torch.cat((self.avg_pool(p2), p3, self.upsample(p4)), dim=1)
         y = self.spp(p)
@@ -54,7 +54,7 @@ class FastestDetV2(nn.Module):
 
     def reparameterize(self):
         """Re-parameterization for inference."""
-        if self.inference_mode:
+        if self.training or self.inference_mode:
             return
         if self.enable_agm:
             del self.aux_spp, self.aux_det

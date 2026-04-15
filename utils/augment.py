@@ -42,7 +42,7 @@ def random_narrow(image, boxes):
     out[:, 2:4], out[:, 4:6] = xy, wh
     return bg, out
 
-def hsv_jitter(image, h_gain=0.1, s_gain=0.1, v_gain=0.15):
+def hsv_jitter(image, h_gain=0.006, s_gain=0.2, v_gain=0.1):
     r = np.random.uniform(-1, 1, 3) * [h_gain, s_gain, v_gain] + 1
     hue, sat, val = cv2.split(cv2.cvtColor(image, cv2.COLOR_BGR2HSV))
     x = np.arange(0, 256)

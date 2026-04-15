@@ -139,8 +139,8 @@ Then follow [deploy/ncnn/README.md](https://github.com/Pairman/FastestDetV2/blob
 # References
 
 - FastestDet: https://github.com/dog-qiuqiu/FastestDet
-- Assign Guidance Module and NCNN deployment: https://github.com/RangiLyu/nanodet
-- SimOTA label assignment: https://github.com/open-mmlab/mmyolo
+- Assign guidance module and NCNN deployment: https://github.com/RangiLyu/nanodet
 - MobileOne: https://github.com/apple/ml-mobileone and https://github.com/glory-wan/TF-Net
 - Quantization-aware RepConv: https://github.com/meituan/YOLOv6
+- SimOTA label assignment: https://github.com/open-mmlab/mmyolo
 - NCNN: https://github.com/Tencent/ncnn

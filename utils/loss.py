@@ -2,6 +2,88 @@ import math
 import torch
 import torch.nn as nn
 
+def box_cxcywh_to_xyxy(boxes: torch.Tensor) -> torch.Tensor:
+    """Convert boxes from center format to corner format."""
+    half_wh = boxes[..., 2:4] * 0.5
+    return torch.cat((boxes[..., :2] - half_wh, boxes[..., :2] + half_wh), dim=-1)
+
+def pairwise_iou(box1: torch.Tensor, box2: torch.Tensor, eps=1e-7) -> torch.Tensor:
+    """Compute pairwise IoU matrix between two box sets."""
+    # convert boxes to corner format
+    box1 = box_cxcywh_to_xyxy(box1)[:, None, :]
+    box2 = box_cxcywh_to_xyxy(box2)[None, :, :]
+    # intersection area
+    lt = torch.maximum(box1[..., :2], box2[..., :2])
+    rb = torch.minimum(box1[..., 2:], box2[..., 2:])
+    wh = (rb - lt).clamp(min=0)
+    inter = wh[..., 0] * wh[..., 1]
+    # union area
+    area1 = (box1[..., 2] - box1[..., 0]).clamp(min=0) * \
+        (box1[..., 3] - box1[..., 1]).clamp(min=0)
+    area2 = (box2[..., 2] - box2[..., 0]).clamp(min=0) * \
+        (box2[..., 3] - box2[..., 1]).clamp(min=0)
+    return inter / (area1 + area2 - inter + eps)
+
+def bbox_iou(box1, box2, eps=1e-7):
+    """Compute SIoU score and raw IoU for matched boxes."""
+    # split box coordinates
+    box1, box2 = box1.t(), box2.t()
+    b1_x1, b1_x2 = box1[0] - box1[2] / 2, box1[0] + box1[2] / 2
+    b1_y1, b1_y2 = box1[1] - box1[3] / 2, box1[1] + box1[3] / 2
+    b2_x1, b2_x2 = box2[0] - box2[2] / 2, box2[0] + box2[2] / 2
+    b2_y1, b2_y2 = box2[1] - box2[3] / 2, box2[1] + box2[3] / 2
+    # base iou
+    inter = (torch.min(b1_x2, b2_x2) - torch.max(b1_x1, b2_x1)).clamp(0) * \
+        (torch.min(b1_y2, b2_y2) - torch.max(b1_y1, b2_y1)).clamp(0)
+    w1, h1 = b1_x2 - b1_x1, b1_y2 - b1_y1 + eps
+    w2, h2 = b2_x2 - b2_x1, b2_y2 - b2_y1 + eps
+    union = w1 * h1 + w2 * h2 - inter + eps
+    iou = inter / union
+    # distance penalty
+    cw = torch.max(b1_x2, b2_x2) - torch.min(b1_x1, b2_x1)
+    ch = torch.max(b1_y2, b2_y2) - torch.min(b1_y1, b2_y1)
+    s_cw = (b2_x1 + b2_x2 - b1_x1 - b1_x2) * 0.5
+    s_ch = (b2_y1 + b2_y2 - b1_y1 - b1_y2) * 0.5
+    sigma = torch.pow(s_cw ** 2 + s_ch ** 2, 0.5) + eps
+    sin_alpha_1 = torch.abs(s_cw) / sigma
+    sin_alpha_2 = torch.abs(s_ch) / sigma
+    threshold = pow(2, 0.5) / 2
+    sin_alpha = torch.where(sin_alpha_1 > threshold, sin_alpha_2, sin_alpha_1)
+    angle_cost = torch.cos(torch.arcsin(sin_alpha) * 2 - math.pi / 2)
+    rho_x = (s_cw / cw) ** 2
+    rho_y = (s_ch / ch) ** 2
+    gamma = angle_cost - 2
+    distance_cost = 2 - torch.exp(gamma * rho_x) - torch.exp(gamma * rho_y)
+    # shape penalty
+    omiga_w = torch.abs(w1 - w2) / torch.max(w1, w2)
+    omiga_h = torch.abs(h1 - h2) / torch.max(h1, h2)
+    shape_cost = torch.pow(1 - torch.exp(-1 * omiga_w), 4) + \
+        torch.pow(1 - torch.exp(-1 * omiga_h), 4)
+    siou_score = iou - 0.5 * (distance_cost + shape_cost)
+    return siou_score, iou
+
+def decode_preds(preds):
+    """Decode predictions into objectness, class, and boxes."""
+    pred = preds.permute(0, 2, 3, 1)
+    # split prediction branches
+    pobj = pred[..., 0].clamp(min=1e-4, max=1 - 1e-4)
+    preg = pred[..., 1:5]
+    pcls = pred[..., 5:].clamp(min=1e-9)
+    _, H, W, _ = pred.shape
+    # build feature map grid
+    gy, gx = torch.meshgrid(
+        torch.arange(H, device=pred.device),
+        torch.arange(W, device=pred.device),
+        indexing="ij")
+    # decode box prediction
+    pbox = torch.empty((*pred.shape[:3], 4),
+        device=pred.device, dtype=pred.dtype)
+    pbox[..., 0] = preg[..., 0].tanh() + gx
+    pbox[..., 1] = preg[..., 1].tanh() + gy
+    pbox[..., 2] = preg[..., 2].sigmoid() * W
+    pbox[..., 3] = preg[..., 3].sigmoid() * H
+    return pobj, pcls, pbox, gx, gy
+
 class DetectorLoss(nn.Module):
     def __init__(self, device="cpu", center_radius=2.5,
         candidate_topk=10, pre_candidate_topk=32, iou_weight=3.0):
@@ -15,92 +97,9 @@ class DetectorLoss(nn.Module):
         self.BCEcls = nn.NLLLoss()
         self.BCEobj = nn.SmoothL1Loss(reduction="none")
 
-    @staticmethod
-    def box_cxcywh_to_xyxy(boxes: torch.Tensor) -> torch.Tensor:
-        """Convert boxes from center format to corner format."""
-        half_wh = boxes[..., 2:4] * 0.5
-        return torch.cat((boxes[..., :2] - half_wh, boxes[..., :2] + half_wh), dim=-1)
-
-    def pairwise_iou(self, box1: torch.Tensor, box2: torch.Tensor, eps=1e-7) -> torch.Tensor:
-        """Compute pairwise IoU matrix between two box sets."""
-        # convert boxes to corner format
-        box1 = self.box_cxcywh_to_xyxy(box1)[:, None, :]
-        box2 = self.box_cxcywh_to_xyxy(box2)[None, :, :]
-        # intersection area
-        lt = torch.maximum(box1[..., :2], box2[..., :2])
-        rb = torch.minimum(box1[..., 2:], box2[..., 2:])
-        wh = (rb - lt).clamp(min=0)
-        inter = wh[..., 0] * wh[..., 1]
-        # union area
-        area1 = (box1[..., 2] - box1[..., 0]).clamp(min=0) * \
-            (box1[..., 3] - box1[..., 1]).clamp(min=0)
-        area2 = (box2[..., 2] - box2[..., 0]).clamp(min=0) * \
-            (box2[..., 3] - box2[..., 1]).clamp(min=0)
-        return inter / (area1 + area2 - inter + eps)
-
-    def bbox_iou(self, box1, box2, eps=1e-7):
-        """Compute SIoU score and raw IoU for matched boxes."""
-        # split box coordinates
-        box1, box2 = box1.t(), box2.t()
-        b1_x1, b1_x2 = box1[0] - box1[2] / 2, box1[0] + box1[2] / 2
-        b1_y1, b1_y2 = box1[1] - box1[3] / 2, box1[1] + box1[3] / 2
-        b2_x1, b2_x2 = box2[0] - box2[2] / 2, box2[0] + box2[2] / 2
-        b2_y1, b2_y2 = box2[1] - box2[3] / 2, box2[1] + box2[3] / 2
-        # base iou
-        inter = (torch.min(b1_x2, b2_x2) - torch.max(b1_x1, b2_x1)).clamp(0) * \
-            (torch.min(b1_y2, b2_y2) - torch.max(b1_y1, b2_y1)).clamp(0)
-        w1, h1 = b1_x2 - b1_x1, b1_y2 - b1_y1 + eps
-        w2, h2 = b2_x2 - b2_x1, b2_y2 - b2_y1 + eps
-        union = w1 * h1 + w2 * h2 - inter + eps
-        iou = inter / union
-        # distance penalty
-        cw = torch.max(b1_x2, b2_x2) - torch.min(b1_x1, b2_x1)
-        ch = torch.max(b1_y2, b2_y2) - torch.min(b1_y1, b2_y1)
-        s_cw = (b2_x1 + b2_x2 - b1_x1 - b1_x2) * 0.5
-        s_ch = (b2_y1 + b2_y2 - b1_y1 - b1_y2) * 0.5
-        sigma = torch.pow(s_cw ** 2 + s_ch ** 2, 0.5) + eps
-        sin_alpha_1 = torch.abs(s_cw) / sigma
-        sin_alpha_2 = torch.abs(s_ch) / sigma
-        threshold = pow(2, 0.5) / 2
-        sin_alpha = torch.where(sin_alpha_1 > threshold, sin_alpha_2, sin_alpha_1)
-        angle_cost = torch.cos(torch.arcsin(sin_alpha) * 2 - math.pi / 2)
-        rho_x = (s_cw / cw) ** 2
-        rho_y = (s_ch / ch) ** 2
-        gamma = angle_cost - 2
-        distance_cost = 2 - torch.exp(gamma * rho_x) - torch.exp(gamma * rho_y)
-        # shape penalty
-        omiga_w = torch.abs(w1 - w2) / torch.max(w1, w2)
-        omiga_h = torch.abs(h1 - h2) / torch.max(h1, h2)
-        shape_cost = torch.pow(1 - torch.exp(-1 * omiga_w), 4) + \
-            torch.pow(1 - torch.exp(-1 * omiga_h), 4)
-        siou_score = iou - 0.5 * (distance_cost + shape_cost)
-        return siou_score, iou
-
-    def decode_preds(self, preds):
-        """Decode predictions into objectness, class, and boxes."""
-        pred = preds.permute(0, 2, 3, 1)
-        # split prediction branches
-        pobj = pred[..., 0].clamp(min=1e-4, max=1 - 1e-4)
-        preg = pred[..., 1:5]
-        pcls = pred[..., 5:].clamp(min=1e-9)
-        _, H, W, _ = pred.shape
-        # build feature map grid
-        gy, gx = torch.meshgrid(
-            torch.arange(H, device=pred.device),
-            torch.arange(W, device=pred.device),
-            indexing="ij")
-        # decode box prediction
-        pbox = torch.empty((*pred.shape[:3], 4),
-            device=pred.device, dtype=pred.dtype)
-        pbox[..., 0] = preg[..., 0].tanh() + gx
-        pbox[..., 1] = preg[..., 1].tanh() + gy
-        pbox[..., 2] = preg[..., 2].sigmoid() * W
-        pbox[..., 3] = preg[..., 3].sigmoid() * H
-        return pobj, pcls, pbox, gx, gy
-
     def get_candidate_mask(self, gt_box, points, W, H):
         """Select feature map points by box and center prior."""
-        gt_xyxy = self.box_cxcywh_to_xyxy(gt_box)
+        gt_xyxy = box_cxcywh_to_xyxy(gt_box)
         px = points[:, 0][None, :]
         py = points[:, 1][None, :]
         # candidate points in gt box
@@ -136,19 +135,14 @@ class DetectorLoss(nn.Module):
     def compute_matching_cost(self, gt_box, gt_cls, pred_box, pred_obj, pred_cls, in_boxes, in_centers):
         """Build SimOTA matching cost for filtered candidates."""
         # matching cost
-        pairwise_ious = self.pairwise_iou(gt_box, pred_box).clamp(min=1e-7)
+        pairwise_ious = pairwise_iou(gt_box, pred_box).clamp(min=1e-7)
         cls_prob = pred_cls[:, gt_cls].permute(1, 0)
         obj_prob = pred_obj.unsqueeze(0)
         cls_cost = -(cls_prob * obj_prob).clamp(min=1e-7).log()
         iou_cost = -pairwise_ious.log()
-        # relax geometry prior and reduce iou cost weight for small objects
-        small_gt = gt_box[:, 2:4].amin(dim=1) < 2.0
-        valid_mask = in_boxes & in_centers
-        valid_mask[small_gt] = in_boxes[small_gt] | in_centers[small_gt]
-        iou_weight = gt_box.new_full((gt_box.size(0), 1), self.iou_weight)
-        iou_weight[small_gt] = self.iou_weight * (2.0 / 3.0)
-        cost = cls_cost + iou_weight * iou_cost + \
-            (~valid_mask).float() * 100000.0
+        in_boxes_and_center = in_boxes & in_centers
+        cost = cls_cost + self.iou_weight * iou_cost + \
+            (~in_boxes_and_center).float() * 100000.0
         return pairwise_ious, cost
 
     def dynamic_k_matching(self, cost, pairwise_ious):
@@ -181,7 +175,7 @@ class DetectorLoss(nn.Module):
         device = preds.device
         B, _, H, W = preds.shape
         # flatten prediction map
-        pobj, pcls, pbox, gx, gy = self.decode_preds(preds)
+        pobj, pcls, pbox, gx, gy = decode_preds(preds)
         pbox = pbox.reshape(B, H * W, 4)
         pobj = pobj.reshape(B, H * W)
         pcls = pcls.reshape(B, H * W, -1)
@@ -245,7 +239,7 @@ class DetectorLoss(nn.Module):
             ptbox[:, 2] = preg[b, gy, gx][:, 2].sigmoid() * W
             ptbox[:, 3] = preg[b, gy, gx][:, 3].sigmoid() * H
             # siou loss
-            siou_score, raw_iou = self.bbox_iou(ptbox, gt_box)
+            siou_score, raw_iou = bbox_iou(ptbox, gt_box)
             l_iou = (1.0 - siou_score).mean()
             # classification loss
             l_cls = self.BCEcls(torch.log(pcls[b, gy, gx].clamp(min=1e-9)), gt_cls)

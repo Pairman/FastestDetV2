@@ -78,7 +78,7 @@ class QARepConv(nn.Module):
 
     def reparameterize(self):
         """Re-parameterization for inference."""
-        if self.inference_mode:
+        if self.training or self.inference_mode:
             return
         in_channels = self.rbr_conv[0].conv.in_channels
         kernel_size = self.rbr_conv[0].conv.kernel_size[0]

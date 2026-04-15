@@ -15,14 +15,18 @@ class Config:
         self.val_txt: str = data["DATASET"]["VAL"]
         self.names: list[str] = data["DATASET"]["NAMES"]
 
-        self.num_classes: int = data["MODEL"]["NUM_CLASSES"]
-        self.input_size: list[int] = data["MODEL"]["INPUT_SIZE"]
+        self.num_classes: int = int(data["MODEL"]["NUM_CLASSES"])
+        self.input_size: list[int] = [int(v) for v in data["MODEL"]["INPUT_SIZE"]]
 
-        self.learning_rate: float = data["TRAIN"]["LEARNING_RATE"]
-        self.warmup_epoch: int = data["TRAIN"]["WARMUP_EPOCH"]
-        self.batch_size: int = data["TRAIN"]["BATCH_SIZE"]
-        self.end_epoch: int = data["TRAIN"]["END_EPOCH"]
-        self.milestones: list[int] = data["TRAIN"]["MILESTIONES"]
+        self.learning_rate: float = float(data["TRAIN"]["LEARNING_RATE"])
+        self.gamma: float = float(data["TRAIN"]["GAMMA"])
+        self.warmup_epoch: int = int(data["TRAIN"]["WARMUP_EPOCH"])
+        self.weight_decay: float = float(data["TRAIN"]["WEIGHT_DECAY"])
+        self.momentum: float = float(data["TRAIN"]["MOMENTUM"])
+        self.ema_decay: float = float(data["TRAIN"]["EMA_DECAY"])
+        self.batch_size: int = int(data["TRAIN"]["BATCH_SIZE"])
+        self.end_epoch: int = int(data["TRAIN"]["END_EPOCH"])
+        self.milestones: list[int] = [int(v) for v in data["TRAIN"]["MILESTIONES"]]
 
         print(f"Loaded configs {path}")
 

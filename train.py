@@ -52,15 +52,15 @@ if __name__ == "__main__":
     else:
         model.backbone.load_state_dict(torch.load(
             str(Path(_ROOT)/"checkpoints/qamobileone.pth")))
-    ema = EMA(model, decay=0.9999, device=opt.device)
+    ema = EMA(model, decay=cfg.ema_decay, device=opt.device)
     proj_name = f"{type(model).__name__.lower()}_{cfg_name}"
     # optimizer
     criterion = DetectorLoss(opt.device)
-    params = [{"params": [], "weight_decay": 5e-4}, {"params": [], "weight_decay": 0.0}]
+    params = [{"params": [], "weight_decay": cfg.weight_decay}, {"params": [], "weight_decay": 0.0}]
     for n, p in model.named_parameters():
         params[1 if p.ndim == 1 or n.endswith(".bias") else 0]["params"].append(p)
-    optimizer = torch.optim.AdamW(params, lr=cfg.learning_rate, betas=(0.9, 0.999))
-    scheduler = MultiStepCosineLR(optimizer, milestones=cfg.milestones, gamma=0.15)
+    optimizer = torch.optim.SGD(params, lr=cfg.learning_rate, momentum=cfg.momentum)
+    scheduler = MultiStepCosineLR(optimizer, milestones=cfg.milestones, gamma=cfg.gamma)
     scaler = torch.amp.GradScaler("cuda")
     # wandb logger
     if opt.enable_wandb:
@@ -77,8 +77,6 @@ if __name__ == "__main__":
         # train
         model.train()
         model.is_detach_backbone = epoch <= cfg.warmup_epoch
-        model.is_detach_agm = epoch > (cfg.milestones[-1]
-            if len(cfg.milestones) > 0 else 0.8 * cfg.end_epoch)
         pbar = tqdm(train_loader, ncols=ncols)
         avg_iou, avg_obj, avg_cls, avg_loss, = 0.0, 0.0, 0.0, 0.0
         for ib, (imgs, labels) in enumerate(pbar):

@@ -16,12 +16,20 @@ MODEL:
   INPUT_SIZE: [352, 352]
 TRAIN:
   # Initial learning rate
-  LEARNING_RATE: 0.0015
+  LEARNING_RATE: 0.001
+  # Gamma for learning rate decay
+  GAMMA: 0.1
   # Number of warm-up epochs
   WARMUP_EPOCH: 5
+  # Weight decay factor for non-BN parameters
+  WEIGHT_DECAY: 5.5e-4
+  # Momentum factor for SGD optimizer
+  MOMENTUM: 0.94
+  # EMA decay factor
+  EMA_DECAY: 0.9998
   # Batch size
-  BATCH_SIZE: 80
+  BATCH_SIZE: 96
   # Total training epochs
   END_EPOCH: 300
   # Epochs for learning rate decay
-  MILESTIONES: [80, 170, 240]
+  MILESTIONES: [80, 160, 220, 260]
