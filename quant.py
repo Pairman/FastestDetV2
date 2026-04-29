@@ -46,7 +46,7 @@ if __name__ == "__main__":
     model = FastestDetV2(num_classes=cfg.num_classes, inference_mode=True).to(opt.device).eval()
     model.load_state_dict(torch.load(opt.weights))
     print(f"Loaded detector weights {opt.weights}")
-    proj_name = f"{type(model).__name__.lower()}_{type(model.backbone).__name__.lower()}_{cfg_name}"
+    proj_name = f"{type(model).__name__.lower()}_{cfg_name}"
     # quantizer
     dummy_inputs = (torch.randn(1, 3, cfg.input_size[1], cfg.input_size[0],
         device=opt.device),)
