@@ -82,4 +82,4 @@ if __name__ == "__main__":
     stats = COCODetectionEvaluator(cfg.names, "cpu").eval(
         val_loader, model_quant.module(), ncols=ncols, colour="green")
     torch.export.save(model_quant, str(savedir/
-        f"{proj_name}_ap50,{stats['coco/AP50']:.6f}_ptq,{opt.target}.pt"))
+        f"{proj_name}_ptq,{opt.target}.pt"))
