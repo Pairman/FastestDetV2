@@ -38,8 +38,7 @@ class Dataset():
                     if not l:
                         continue
                     n, e = path.splitext(l)
-                    n, e = n.lower(), e.lower()
-                    if e in self.exts and path.exists(l) and \
+                    if e.lower() in self.exts and path.exists(l) and \
                         path.exists(f"{path.splitext(l)[0]}.txt"):
                         self.data_list.append(n)
                         self.images_exts[n] = e
@@ -51,14 +50,13 @@ class Dataset():
             images_set, labels_set = set(), set()
             for l in listdir(self.images_dir):
                 n, e = path.splitext(l)
-                n, e = n.lower(), e.lower()
-                if e in self.exts:
+                if e.lower() in self.exts:
                     images_set.add(n)
                     self.images_exts[n] = e
             for l in listdir(self.labels_dir):
                 n, e = path.splitext(l)
                 if e.lower() == ".txt":
-                    labels_set.add(n.lower())
+                    labels_set.add(n)
             self.data_list = list(images_set & labels_set)
         self.data_list.sort()
 
