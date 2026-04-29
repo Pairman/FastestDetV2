@@ -1,12 +1,16 @@
-# FastestDetV2
+# FastestDetV2 [**[中文]**](https://github.com/Pairman/FastestDetV2/blob/main/README_zh.md)
 
-Even faster and stronger than [FastestDet](https://github.com/dog-qiuqiu/FastestDet).
+🔥🔥Even faster and stronger than [FastestDet](https://github.com/dog-qiuqiu/FastestDet)🔥🔥<br>
+🔥🔥比[FastestDet](https://github.com/dog-qiuqiu/FastestDet)还快还强🔥🔥
 
 ## Improvements
 
-- **2.5% mAP50 & 1% mAP50:95 improvement, with ~20% faster speed** compared to [FastestDet](https://github.com/dog-qiuqiu/FastestDet)
+- ⚡**2.5% mAP50 & 1% mAP50:95 improvement, with ~20% faster speed** compared to [FastestDet](https://github.com/dog-qiuqiu/FastestDet)
 - **Assign Guidance Module** and **SimOTA** label assignment for better accuracy
 - **Quantization-aware**, reparameterizable **MobileOne** backbone and convolution modules
+- ⚡相比[FastestDet](https://github.com/dog-qiuqiu/FastestDet)，**mAP50提升2.5%，mAP50:95提升1%，同时速度提升约20%**
+- 采用**Assign Guidance Module**和**SimOTA**标签分配策略，以获得更好的精度
+- 基于支持**量化感知训练**、可重参数化的**MobileOne**骨干网络和卷积模块
 
 ## Gallery
 <img src="https://github.com/Pairman/FastestDetV2/blob/main/.github/assets/readme_gallery_1.png">
@@ -88,6 +92,14 @@ python3 train.py --configs CONFIGS_PATH --weights WEIGHTS_PATH
 ```
 
 ## Deployment
+
+### ONNX and TorchScript
+
+Export to ONNX and TorchScript format with:
+
+```sh
+python3 test.py --configs CONFIGS_PATH --weights WEIGHTS_PATH --export
+```
 
 ### PT2E PTQ
 
