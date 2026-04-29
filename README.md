@@ -5,17 +5,17 @@ Even faster and stronger than [FastestDet](https://github.com/dog-qiuqiu/Fastest
 ## Improvements
 
 - **2.5% mAP50 & 1% mAP50:95 improvement, with ~20% faster speed** compared to [FastestDet](https://github.com/dog-qiuqiu/FastestDet)
-- Assign Guidance Module and SimOTA label assignment for better accuracy
-- Quantization-aware, reparameterizable MobileOne backbone and convolution modules
+- **Assign Guidance Module** and **SimOTA** label assignment for better accuracy
+- **Quantization-aware**, reparameterizable **MobileOne** backbone and convolution modules
 
 ## Gallery
-<img src=".github/assets/readme_gallery_1.png">
-<center><img src=".github/assets/readme_gallery_2.png" width="85%"></center>
+<img src="https://github.com/Pairman/FastestDetV2/blob/main/.github/assets/readme_gallery_1.png">
+<center><img src="https://github.com/Pairman/FastestDetV2/blob/main/.github/assets/readme_gallery_2.png" width="85%"></center>
 
 ## Benchmarks
 Model|mAP50|mAP50:95|Resolution|Inference time (4x core)|Inference time (1x core)|Params (M)
 :---:|:---:|:---:|:---:|:---:|:---:|:---:
-[FastestDetV2](https://github.com/Pairman/FastestDetV2)|27.8%|14.0%|352X352|2.83ms|6.95ms|0.33M
+**[FastestDetV2](https://github.com/Pairman/FastestDetV2)**|**27.8%**|**14.0%**|**352X352**|**2.83ms**|**6.95ms**|**0.33M**
 [FastestDet](https://github.com/dog-qiuqiu/FastestDet)|25.3%|13.0%|352X352|3.68ms|8.48ms|0.24M
 [nanodet_m](https://github.com/RangiLyu/nanodet)|-|20.6%|320X320|7.76ms|22.23ms|0.95M
 [yolox-nano](https://github.com/Megvii-BaseDetection/YOLOX)|-|25.8%|416X416|36.88ms|92.52ms|0.91M
@@ -56,7 +56,7 @@ pip install -r requirements.txt
 
 ## Datasets and Configurations
 
-Datasets can be either in Darknet format (like FastestDet, using a text file to list image paths, with labels stored in separate .txt files in the same directory) or in YOLO format (like YOLOv8, where each image has a corresponding .txt label file in a seperate directory). Labels are in ```cls cx cy w h``` normalized bboxes.
+Datasets can be either in **Darknet format** (like FastestDet, using a text file to list image paths, with labels stored in separate .txt files in the same directory) or in **YOLO format** (like YOLOv8, where each image has a corresponding .txt label file in a seperate directory). Labels are in ```cls cx cy w h``` normalized bboxes.
 
 The .yaml configurations file specifies dataset paths, model settings, and training hyperparameters. Dataset could be either in Darknet format or YOLO format. Class names can also be in a single text file with each line representing a class name. See [configs/coco.yaml](https://github.com/Pairman/FastestDetV2/blob/main/configs/coco.yaml) for example.
 

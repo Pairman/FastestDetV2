@@ -9,7 +9,7 @@ if not _ROOT in sys.path:
     sys.path.append(_ROOT)
 from module.fastestdetv2 import FastestDetV2
 from utils.config import Config
-from utils.postproc import decode_preds, apply_nms
+from utils.nms import decode_preds, apply_nms
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

@@ -3,7 +3,7 @@ from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 import torch
 from tqdm import tqdm
-from utils.postproc import decode_preds, apply_nms
+from utils.nms import decode_preds, apply_nms
 
 _stat_names = [
     "coco/AP", "coco/AP50", "coco/AP75",
