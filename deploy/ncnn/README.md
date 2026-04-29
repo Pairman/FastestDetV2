@@ -8,10 +8,15 @@ Install [NCNN](https://github.com/Tencent/ncnn) and [PNNX](https://github.com/pn
 pip install ncnn pnnx
 ```
 
-Convert ```.pt``` TorchScript to ```*.ncnn.param``` and ```*.ncnn.bin``` using PNNX:
+Export ```.pt``` from the project root:
 
 ```sh
-pnnx TORCHSCRIPT_PATH  ncnnparam=fastestdetv2.param ncnnbin=fastestdetv2.bin
+python test.py --export --weights WEIGHTS_PATH --configs CONFIGS_PATH
+
+Convert ```.pt``` to ```*.ncnn.param``` and ```*.ncnn.bin```:
+
+```sh
+pnnx TORCHSCRIPT_PATH ncnnparam=fastestdetv2.param ncnnbin=fastestdetv2.bin
 ```
 
 ### Building

@@ -4,7 +4,6 @@ from pathlib import Path
 from prefetch_generator import BackgroundGenerator
 from shutil import get_terminal_size
 import sys
-import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -22,7 +21,7 @@ class DataLoaderX(DataLoader):
         return BackgroundGenerator(super().__iter__())
 
 def get_train_transform(epoch: int, end_epoch: int):
-    imgsz = int(160 + 96 * min(1, epoch / (0.8 * end_epoch)) ** 0.5)
+    imgsz = int(160 + 64 * min(1, epoch / (0.8 * end_epoch)) ** 0.5)
     return transforms.Compose([
         transforms.RandomResizedCrop(imgsz, (0.6, 1.0), (0.7, 1.3)),
         transforms.ColorJitter(0.2, 0.2, 0.2, 0.02),
@@ -67,7 +66,7 @@ if __name__ == "__main__":
     cfg = {"name": "imagenet1k", "end_epoch": 300, "batch_size": 256, "learning_rate": 0.1, "warmup_epoch": 5}
     opt = parser.parse_args()
     ncols = get_terminal_size().columns
-    savedir = Path(_ROOT).resolve()/"checkpoints"
+    savedir = Path(_ROOT).resolve()/"weights"
     savedir.mkdir(exist_ok=True)
     # dataloaders
     num_workers = max(6, cpu_count() // 2)

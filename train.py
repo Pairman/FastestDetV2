@@ -26,7 +26,7 @@ if __name__ == "__main__":
     opt = parser.parse_args()
     cfg = Config(opt.configs)
     cfg_name = Path(opt.configs).stem
-    savedir = Path(__file__).resolve().parent/"checkpoints"
+    savedir = Path(__file__).resolve().parent/"weights"
     savedir.mkdir(exist_ok=True)
     ncols = get_terminal_size().columns
     # data loaders
@@ -50,8 +50,7 @@ if __name__ == "__main__":
                 for k, v in w.items() if k.startswith("backbone.")})
         print(f"Loaded detector {'backbone from' if is_bb else 'weights'} {opt.weights}")
     else:
-        model.backbone.load_state_dict(torch.load(
-            str(Path(_ROOT)/"checkpoints/qamobileone.pth")))
+        model.backbone.load_state_dict(torch.load(str(savedir/"qamobileone.pth")))
     ema = EMA(model, decay=cfg.ema_decay, device=opt.device)
     proj_name = f"{type(model).__name__.lower()}_{cfg_name}"
     # optimizer

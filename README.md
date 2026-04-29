@@ -2,18 +2,20 @@
 
 Even faster and stronger than [FastestDet](https://github.com/dog-qiuqiu/FastestDet).
 
-> This is still a work in progress.
-
 ## Improvements
 
-* Assign Guidance Module and SimOTA label assignment for better accuracy
-* Quantization-aware Reparameterizable Convolution Modules
-* Quantization-aware MobileOne Backbone
+- **2.5% mAP50 & 1% mAP50:95 improvement, with ~20% faster speed** compared to [FastestDet](https://github.com/dog-qiuqiu/FastestDet)
+- Assign Guidance Module and SimOTA label assignment for better accuracy
+- Quantization-aware, reparameterizable MobileOne backbone and convolution modules
+
+## Gallery
+<img src=".github/assets/readme_gallery_1.png">
+<center><img src=".github/assets/readme_gallery_2.png" width="85%"></center>
 
 ## Benchmarks
-Model|mAP 0.5|mAP 0.5:0.95|Resolution|Inference time (4x core)|Inference time (1x core)|Params (M)
+Model|mAP50|mAP50:95|Resolution|Inference time (4x core)|Inference time (1x core)|Params (M)
 :---:|:---:|:---:|:---:|:---:|:---:|:---:
-[FastestDetV2](https://github.com/Pairman/FastestDetV2)|27.3%|13.8%|352X352|2.83ms|6.95ms|0.20M
+[FastestDetV2](https://github.com/Pairman/FastestDetV2)|27.8%|14.0%|352X352|2.83ms|6.95ms|0.33M
 [FastestDet](https://github.com/dog-qiuqiu/FastestDet)|25.3%|13.0%|352X352|3.68ms|8.48ms|0.24M
 [nanodet_m](https://github.com/RangiLyu/nanodet)|-|20.6%|320X320|7.76ms|22.23ms|0.95M
 [yolox-nano](https://github.com/Megvii-BaseDetection/YOLOX)|-|25.8%|416X416|36.88ms|92.52ms|0.91M
@@ -24,11 +26,25 @@ Model|mAP 0.5|mAP 0.5:0.95|Resolution|Inference time (4x core)|Inference time (1
 ## Multi-platform benchmarks
 Device|Computing backend|System|Framework|Inference time (4x core)|Inference time (1x core)
 :---:|:---:|:---:|:---:|:---:|:---:
-EmbedFire LubanCat-4|RK3588 (CPU@2.0GHz)|Linux (arm)|NCNN|2.83ms|6.95ms
-EmbedFire LubanCat-4|RK3588 (NPU)|Linux (arm)|RKNN|-|??ms
-Google Pixel 10 Pro XL|Tensor G5 (CPU)|Android (arm)|NCNN|??ms|??ms
-OnePlus|Snapdragon 845 (CPU)|Android (arm)|NCNN|??ms|??ms
-Dell Precision 3630 Tower|Core i9-9900 (CPU@800MHz)|Linux (x86)|NCNN|??m|??ms
+EmbedFire LubanCat-4|RK3588 (CPU@2.0GHz)|Linux (arm64)|NCNN|2.83ms|6.95ms
+EmbedFire LubanCat-4|RK3588 (NPU)|Linux (arm64)|RKNN|7.067ms <sup>1</sup>|7.532ms
+Google Pixel 10 Pro XL|Tensor G5 (CPU)|Android (arm64)|NCNN|2.69ms|3.88ms
+OnePlus|Snapdragon 845 (CPU)|Android (arm64)|NCNN|4.73ms|8.14ms
+Dell Precision 3630 Tower|Core i9-9900 (CPU) <sup>2</sup>|Linux (x86)|NCNN|2.90m|7.31ms
+> <sup>1</sup>: RKNNLite.NPU_CORE_0_1_2 is used. <br>
+> <sup>2</sup>: At 800MHz.
+
+## Model Zoo
+Download|Note
+:---:|:---:
+[fastestdetv2.pth](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.pth)|Fused weights
+[fastestdetv2_unfused.pth](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2_unfused.pth)|Unfused weights
+[qamobileone.pth](https://github.com/Pairman/FastestDetV2/releases/download/v1/qamobileone.pth)|Backbone weights
+[fastestdetv2.apk](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.apk)|Android demo
+[fastestdetv2.bin](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.bin)<br>[fastestdetv2.param](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.param)|NCNN files
+[fastestdetv2.rknn](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.rknn)|RKNN file
+[fastestdetv2.onnx](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.onnx)|ONNX file
+[fastestdetv2.pt](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.pt)<br>[fastestdetv2_ptq,arm.pt](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2_ptq,arm.pt)<br>[fastestdetv2_ptq,x86.pt](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2_ptq,x86.pt)|TorchScript files
 
 # Usage
 
@@ -38,71 +54,37 @@ Dell Precision 3630 Tower|Core i9-9900 (CPU@800MHz)|Linux (x86)|NCNN|??m|??ms
 pip install -r requirements.txt
 ```
 
-## Datasets
+## Datasets and Configurations
 
 Datasets can be either in Darknet format (like FastestDet, using a text file to list image paths, with labels stored in separate .txt files in the same directory) or in YOLO format (like YOLOv8, where each image has a corresponding .txt label file in a seperate directory). Labels are in ```cls cx cy w h``` normalized bboxes.
 
-## Configurations
+The .yaml configurations file specifies dataset paths, model settings, and training hyperparameters. Dataset could be either in Darknet format or YOLO format. Class names can also be in a single text file with each line representing a class name. See [configs/coco.yaml](https://github.com/Pairman/FastestDetV2/blob/main/configs/coco.yaml) for example.
 
-The .yaml configurations file specifies dataset paths, model settings, and training hyperparameters. Dataset could be either in Darknet format or YOLO format. Class names can also be in a single text file with each line representing a class name.
+## Evaluation or testing
 
-```yaml
-DATASET:
-  # Path to training images list file (darknet style) or directory (yolo style)
-  TRAIN: "/data/datasets/coco-darknet/train2017.txt"
-  # Path to evaluation images list file (darknet style) or directory (yolo style)
-  VAL: "/data/datasets/coco-darknet/val2017.txt"
-  # Path to class names list file or list of class names
-  NAMES: [person, bicycle, ..., toothbrush]
-MODEL:
-  # Number of classes
-  NUM_CLASSES: 80
-  # Input width and height
-  INPUT_SIZE: [352, 352]
-TRAIN:
-  # Initial learning rate
-  LEARNING_RATE: 0.001
-  # Number of warm-up epochs
-  WARMUP_EPOCH: 5
-  # Batch size
-  BATCH_SIZE: 256
-  # Total training epochs
-  END_EPOCH: 300
-  # Epochs for learning rate decay
-  MILESTIONES: [100, 200, 250]
-```
-
-## Training
-
-Train from start:
-
-```sh
-python3 train.py --configs CONFIGS_PATH
-```
-
-For a V1-scale FastestDetV2 preset tuned for NCNN CPU latency, start from `configs/coco_lite.yaml`.
-For a ShuffleNetV2-style fast backbone preset, use `configs/coco-shuffle.yaml`.
-For a hybrid backbone preset (Shuffle early stages + MobileOne tail), use `configs/coco-hybrid.yaml`.
-
-Finetune with unfused weights:
-```sh
-python3 train.py --configs CONFIGS_PATH --weights WEIGHTS_PATH
-```
-
-## Evaluation
-
-Evaluate with fused weights:
+You can evaluate the model with a fused (reparameterized) model weights file.
 
 ```sh
 python3 eval.py --configs CONFIGS_PATH --weight WEIGHTS_PATH
 ```
 
-## Testing
-
-Test on an image with fused weights:
+Or test it on an image:
 
 ```sh
 python3 test.py --configs CONFIGS_PATH --weights WEIGHTS_PATH --image IMAGE_PATH
+```
+
+## Training
+
+Download the backbone weights and place it under ```weights/qamobileone.pth```, and run:
+
+```sh
+python3 train.py --configs CONFIGS_PATH
+```
+
+Or finetune it with an unfused weights file:
+```sh
+python3 train.py --configs CONFIGS_PATH --weights WEIGHTS_PATH
 ```
 
 ## Deployment
@@ -117,13 +99,11 @@ python3 quant.py --configs CONFIGS_PATH --weights WEIGHTS_PATH --image IMAGE_PAT
 
 ### NCNN
 
-Export to TorchScript with fused weights:
+Follow [deploy/ncnn/README.md](https://github.com/Pairman/FastestDetV2/blob/main/deploy/ncnn/README.md) or [deploy/ncnn_android/README.md](https://github.com/Pairman/FastestDetV2/blob/main/deploy/ncnn_android/README.md) (for Android).
 
-```sh
-python test.py --weights WEIGHTS_PATH --export
-```
+### RKNN
 
-Then follow [deploy/ncnn/README.md](https://github.com/Pairman/FastestDetV2/blob/main/deploy/ncnn/README.md)
+Follow [deploy/rknn/README.md](https://github.com/Pairman/FastestDetV2/blob/main/deploy/rknn/README.md)
 
 # Citation
 

@@ -3,7 +3,7 @@ from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 import torch
 from tqdm import tqdm
-from utils.postproc import *
+from utils.postproc import decode_preds, apply_nms
 
 _stat_names = [
     "coco/AP", "coco/AP50", "coco/AP75",
@@ -91,7 +91,7 @@ class COCODetectionEvaluator():
             imgs = imgs.to(self.device).float() / 255.0
             with torch.no_grad():
                 preds = model(imgs)
-                output = process_preds(preds, conf_thres=0.001)
+                output = apply_nms(decode_preds(preds), conf_thres=0.001)
             n, _, h, w = imgs.shape
             # detections
             for p in output:

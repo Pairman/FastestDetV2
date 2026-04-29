@@ -23,21 +23,19 @@ from utils.quant import print_quant_stats
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--device", type=str, default="cuda", help="device")
-    parser.add_argument("--weights", type=str, default=str(Path(_ROOT)/"checkpoints/fastestdetv2_coco_best.pth"), help=".pt weights, reparameterized")
+    parser.add_argument("--weights", type=str, default=str(Path(_ROOT)/"weights/fastestdetv2_coco_best.pth"), help=".pt weights, reparameterized")
     parser.add_argument("--configs", type=str, default=str(Path(_ROOT)/"configs/coco.yaml"), help=".yaml configs")
     parser.add_argument("--target", type=str, default="arm", help="target platform, arm or x86")
     opt = parser.parse_args()
     cfg = Config(opt.configs)
     cfg_name = Path(opt.configs).stem
-    savedir = Path(__file__).resolve().parent/"checkpoints"
+    savedir = Path(__file__).resolve().parent/"weights"
     savedir.mkdir(exist_ok=True)
     ncols = get_terminal_size().columns
     warnings.filterwarnings("ignore", message=".*erase_node(.*) on an already erased node.*")
     # data loaders
     num_workers = max(4, cpu_count() // 4)
     calib_dataset = Dataset(cfg.train_txt, cfg.input_size, aug=False)
-    # calib_dataset = torch.utils.data.random_split(calib_dataset, [
-    #     cfg.batch_size, len(calib_dataset) - cfg.batch_size])[0]
     val_dataset = Dataset(cfg.val_txt, cfg.input_size, aug=False)
     calib_loader = torch.utils.data.DataLoader(calib_dataset,
         shuffle=True, collate_fn=collate_fn, drop_last=True,

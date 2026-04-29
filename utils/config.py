@@ -26,7 +26,7 @@ class Config:
         self.ema_decay: float = float(data["TRAIN"]["EMA_DECAY"])
         self.batch_size: int = int(data["TRAIN"]["BATCH_SIZE"])
         self.end_epoch: int = int(data["TRAIN"]["END_EPOCH"])
-        self.milestones: list[int] = [int(v) for v in data["TRAIN"]["MILESTIONES"]]
+        self.milestones: list[int] = [int(v) for v in data["TRAIN"]["MILESTONES"]]
 
         print(f"Loaded configs {path}")
 

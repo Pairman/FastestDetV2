@@ -1,14 +1,15 @@
+## Configurations
+
+The .yaml configurations file specifies dataset paths, model settings, and training hyperparameters. Dataset could be either in Darknet format or YOLO format. Class names can also be in a single text file with each line representing a class name.
+
+```yaml
 DATASET:
   # Path to training images list file (darknet style) or directory (yolo style)
   TRAIN: "/data/datasets/coco2017/images/train2017"
   # Path to evaluation images list file (darknet style) or directory (yolo style)
   VAL: "/data/datasets/coco2017/images/val2017"
   # Path to class names list file or list of class names
-  NAMES: [person, bicycle, car, motorbike, aeroplane, bus, train, truck, boat, traffic light, fire hydrant, stop sign, parking meter, bench, bird, cat,
-    dog, horse, sheep, cow, elephant, bear, zebra, giraffe, backpack, umbrella, handbag, tie, suitcase, frisbee, skis, snowboard,
-    sports ball, kite, baseball bat, baseball glove, skateboard, surfboard, tennis racket, bottle, wine glass, cup, fork, knife, spoon, bowl, banana, apple,
-    sandwich, orange, broccoli, carrot, hot dog, pizza, donut, cake, chair, sofa, pottedplant, bed, diningtable, toilet, tvmonitor, laptop,
-    mouse, remote, keyboard, cell phone, microwave, oven, toaster, sink, refrigerator, book, clock, vase, scissors, teddy bear, hair drier, toothbrush]
+  NAMES: [person, ..., toothbrush]
 MODEL:
   # Number of classes
   NUM_CLASSES: 80
@@ -33,3 +34,4 @@ TRAIN:
   END_EPOCH: 300
   # Epochs for learning rate decay
   MILESTONES: [120, 270]
+```

@@ -14,7 +14,7 @@ from utils.evaluator import COCODetectionEvaluator
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--device", type=str, default="cuda", help="device")
-    parser.add_argument("--weights", type=str, default=str(Path(_ROOT)/"checkpoints/fastestdetv2_coco_best.pth"), help=".pt weights")
+    parser.add_argument("--weights", type=str, default=str(Path(_ROOT)/"weights/fastestdetv2_coco_best.pth"), help=".pt weights")
     parser.add_argument("--configs", type=str, default=str(Path(_ROOT)/"configs/coco.yaml"), help=".yaml configs")
     opt = parser.parse_args()
     cfg = Config(opt.configs)
