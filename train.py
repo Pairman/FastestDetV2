@@ -43,12 +43,13 @@ if __name__ == "__main__":
     model = FastestDetV2(num_classes=cfg.num_classes).to(opt.device)
     if opt.weights is not None:
         w = torch.load(opt.weights)
-        ik = model.load_state_dict(w, strict=False)
-        is_bb = len(ik.missing_keys) or len(ik.unexpected_keys)
-        if is_bb:
-            model.backbone.load_state_dict({k[len("backbone."):]: v
+        try:
+            model.load_state_dict(w, strict=False)
+            print(f"Loaded detector weights {opt.weights}")
+        except RuntimeError:
+            model.backbone.load_state_dict({k[len('backbone.'):]: v
                 for k, v in w.items() if k.startswith("backbone.")})
-        print(f"Loaded detector {'backbone from' if is_bb else 'weights'} {opt.weights}")
+            print(f"Loaded detector backbone from {opt.weights}")
     else:
         model.backbone.load_state_dict(torch.load(str(savedir/"qamobileone.pth")))
     ema = EMA(model, decay=cfg.ema_decay, device=opt.device)
