@@ -1,6 +1,6 @@
 # FastestDetV2
 
-🔥🔥比[FastestDet](https://github.com/dog-qiuqiu/FastestDet)还快还强🔥🔥
+🔥🔥比[FastestDet](https://github.com/dog-qiuqiu/FastestDet)更快更强🔥🔥
 
 ## 关键改进
 
@@ -17,22 +17,23 @@ Model|mAP50|mAP50:95|Resolution|Inference time (4x core)|Inference time (1x core
 :---:|:---:|:---:|:---:|:---:|:---:|:---:
 **[FastestDetV2](https://github.com/Pairman/FastestDetV2)**|**27.8%**|**14.0%**|**352X352**|**2.83ms**|**6.95ms**|**0.33M**
 [FastestDet](https://github.com/dog-qiuqiu/FastestDet)|25.3%|13.0%|352X352|3.68ms|8.48ms|0.24M
-[nanodet_m](https://github.com/RangiLyu/nanodet)|-|20.6%|320X320|7.76ms|22.23ms|0.95M
-[yolox-nano](https://github.com/Megvii-BaseDetection/YOLOX)|-|25.8%|416X416|36.88ms|92.52ms|0.91M
-[yolov8n](https://github.com/ultralytics/ultralytics)|56.8%|37.4%|640X640|57.03ms|122.63ms|7.2M
+[NanoDet-m](https://github.com/RangiLyu/nanodet)|-|20.6%|320X320|7.76ms|22.23ms|0.95M
+[YOLOX-Nano](https://github.com/Megvii-BaseDetection/YOLOX)|-|25.8%|416X416|36.88ms|92.52ms|0.91M
+[YOLOv8n](https://github.com/ultralytics/ultralytics)|56.8%|37.4%|640X640|57.03ms|122.63ms|7.2M
 
 > 测试平台为野火鲁班猫4 RK3588S，ARM 4\*Cortex-A76 CPU@2.0GHz，使用[NCNN](https://github.com/Tencent/ncnn)。
 
 ## 多平台基准测试
 Device|Computing backend|System|Framework|Inference time (4x core)|Inference time (1x core)
 :---:|:---:|:---:|:---:|:---:|:---:
-EmbedFire LubanCat-4|RK3588 (CPU@2.0GHz)|Linux (arm64)|NCNN|2.83ms|6.95ms
-EmbedFire LubanCat-4|RK3588 (NPU)|Linux (arm64)|RKNN|7.067ms <sup>1</sup>|7.532ms
+EmbedFire LubanCat-4|RK3588 (CPU) <sup>1</sup>|Linux (arm64)|NCNN|2.83ms|6.95ms
+EmbedFire LubanCat-4|RK3588 (NPU)|Linux (arm64)|RKNN|7.067ms <sup>2</sup>|7.532ms
 Google Pixel 10 Pro XL|Tensor G5 (CPU)|Android (arm64)|NCNN|2.69ms|3.88ms
 OnePlus|Snapdragon 845 (CPU)|Android (arm64)|NCNN|4.73ms|8.14ms
-Dell Precision 3630 Tower|Core i9-9900 (CPU) <sup>2</sup>|Linux (x86)|NCNN|2.90m|7.31ms
-> <sup>1</sup>: 使用RKNNLite.NPU_CORE_0_1_2。 <br>
-> <sup>2</sup>: 频率为800MHz。
+Dell Precision 3630 Tower|Core i9-9900 (CPU) <sup>3</sup>|Linux (x86)|NCNN|2.90m|7.31ms
+> <sup>1</sup>: 频率为2.0GHz。<br>
+> <sup>2</sup>: 使用RKNNLite.NPU_CORE_0_1_2。<br>
+> <sup>3</sup>: 频率为800MHz。
 
 ## 模型下载
 Download|Note
@@ -111,7 +112,7 @@ python3 quant.py --configs CONFIGS_PATH --weights WEIGHTS_PATH --image IMAGE_PAT
 
 ### RKNN
 
-参考[deploy/rknn/README.md](https://github.com/Pairman/FastestDetV2/blob/main/deploy/rknn/README.md)
+参考[deploy/rknn/README.md](https://github.com/Pairman/FastestDetV2/blob/main/deploy/rknn/README.md)。
 
 # 引用
 
@@ -127,8 +128,8 @@ python3 quant.py --configs CONFIGS_PATH --weights WEIGHTS_PATH --image IMAGE_PAT
 # 参考资料
 
 - FastestDet: https://github.com/dog-qiuqiu/FastestDet
-- Assign guidance module and NCNN deployment: https://github.com/RangiLyu/nanodet
+- Assign Guidance Module和NCNN部署: https://github.com/RangiLyu/nanodet
 - MobileOne: https://github.com/apple/ml-mobileone and https://github.com/glory-wan/TF-Net
-- Quantization-aware RepConv: https://github.com/meituan/YOLOv6
-- SimOTA label assignment: https://github.com/open-mmlab/mmyolo
+- 支持量化感知的可重参数化卷积: https://github.com/meituan/YOLOv6
+- SimOTA标签分配策略: https://github.com/open-mmlab/mmyolo
 - NCNN: https://github.com/Tencent/ncnn
