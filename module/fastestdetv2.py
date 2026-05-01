@@ -11,7 +11,7 @@ from module.repconv import QARepConv
 
 class FastestDetV2(nn.Module):
     def __init__(self, num_classes: int=80, backbone_blocks: list[int]=[4, 8, 4],
-        backbone_channels: list[int]=[24, 48, 96, 192], head_channels: int=96,
+        backbone_channels: list[int]=[24, 48, 96, 192],
         inference_mode: bool=False, enable_agm: bool=True):
         super().__init__()
         self.inference_mode = inference_mode
@@ -21,6 +21,7 @@ class FastestDetV2(nn.Module):
         self.backbone = QAMobileOne(backbone_blocks, backbone_channels,
             inference_mode=inference_mode)
         channels = sum(backbone_channels[-3:])
+        head_channels = backbone_channels[2]
         self.upsample = nn.Upsample(scale_factor=2)
         self.avg_pool = nn.AvgPool2d(kernel_size=3, stride=2, padding=1)
         self.spp = SPP(channels, head_channels, inference_mode)
