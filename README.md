@@ -6,7 +6,7 @@
 ## Improvements
 
 - ⚡**2.5% mAP50 & 1% mAP50:95 improvement, with ~20% faster speed** compared to [FastestDet](https://github.com/dog-qiuqiu/FastestDet)
-- **Assign Guidance Module** and **SimOTA** label assignment for better accuracy
+- **Assign Guidance Module** and **SimOTA** label assignment for better precision
 - **Quantization-aware**, reparameterizable **MobileOne** backbone and convolution modules
 - ⚡相比[FastestDet](https://github.com/dog-qiuqiu/FastestDet)，**mAP50提升2.5%，mAP50:95提升1%，同时速度提升约20%**
 - 采用**Assign Guidance Module**和**SimOTA**标签分配策略，以获得更好的精度
@@ -27,7 +27,7 @@ Model|mAP50|mAP50:95|Resolution|Inference time (4x core)|Inference time (1x core
 
 > Tested on EmbedFire LubanCat-4 RK3588S ARM 4\*Cortex-A76 CPU@2.0GHz, using [NCNN](https://github.com/Tencent/ncnn).
 
-## Multi-platform benchmarks
+## Multi-platform Benchmarks
 Device|Computing backend|System|Framework|Inference time (4x core)|Inference time (1x core)
 :---:|:---:|:---:|:---:|:---:|:---:
 EmbedFire LubanCat-4|RK3588 (CPU) <sup>1</sup>|Linux (arm64)|NCNN|2.83ms|6.95ms
@@ -59,13 +59,13 @@ Download|Note
 pip install -r requirements.txt
 ```
 
-## Datasets and Configurations
+## Datasets & Configurations
 
 Datasets can be either in **Darknet format** (like FastestDet, using a text file to list image paths, with labels stored in separate .txt files in the same directory) or in **YOLO format** (like YOLOv8, where each image has a corresponding .txt label file in a seperate directory). Labels are in ```cls cx cy w h``` normalized bboxes.
 
 The .yaml configurations file specifies dataset paths, model settings, and training hyperparameters. Dataset could be either in Darknet format or YOLO format. Class names can also be in a single text file with each line representing a class name. See [configs/coco.yaml](https://github.com/Pairman/FastestDetV2/blob/main/configs/coco.yaml) for example.
 
-## Evaluation or testing
+## Evaluation & Testing
 
 You can evaluate the model with a fused (reparameterized) model weights file.
 
@@ -94,7 +94,7 @@ python3 train.py --configs CONFIGS_PATH --weights WEIGHTS_PATH
 
 ## Deployment
 
-### ONNX and TorchScript
+### ONNX & TorchScript
 
 Export to ONNX and TorchScript format with:
 
