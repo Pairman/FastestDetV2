@@ -32,7 +32,7 @@ class QAMobileOneBlock(nn.Module):
 class QAMobileOne(nn.Module):
     """Quantization-aware mini MobileOne."""
     def __init__(self, num_blocks_per_stage: list[int]=[4, 8, 4],
-        base_channels: list[int]=[48, 96, 192, 384], inference_mode=False):
+        base_channels: list[int]=[24, 48, 96, 192], inference_mode=False):
         super().__init__()
         self.inference_mode = inference_mode
         self.base_channels = base_channels
@@ -73,7 +73,7 @@ class QAMobileOneClassifier(nn.Module):
     """Classification model with QAMobileOne backbone."""
 
     def __init__(self, num_classes=1000, num_blocks_per_stage: list[int]=[4, 8, 4],
-        base_channels: list[int]=[48, 96, 192, 384], inference_mode=False):
+        base_channels: list[int]=[24, 48, 96, 192], inference_mode=False):
         super().__init__()
         self.backbone = QAMobileOne(num_blocks_per_stage, base_channels,
             inference_mode=inference_mode)
