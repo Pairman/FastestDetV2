@@ -8,7 +8,7 @@ public class FastestDetV2 {
         System.loadLibrary("fastestdetv2");
     }
 
-    public static native void init(AssetManager manager);
+    public static native boolean init(AssetManager manager, String modelVariant);
     public static native Box[] detect(Bitmap bitmap, double threshold, double nms_threshold);
     public static native String bench(int iters);
 }

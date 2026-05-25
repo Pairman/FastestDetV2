@@ -41,9 +41,10 @@ cmake --install opencv-4.x/build
 Build NCNN library (https://github.com/Tencent/ncnn/wiki/how-to-build#build-for-linux):
 
 ```sh
-git clone --recursive https://github.com/Tencent/ncnn --depth 1
+git clone https://github.com/Tencent/ncnn --depth 1
 cmake -S ncnn -B ncnn/build \
   -DCMAKE_BUILD_TYPE=Release \
+  -DNCNN_VULKAN=OFF \
   -DNCNN_BUILD_TOOLS=OFF \
   -DNCNN_BUILD_TESTS=OFF \
   -DNCNN_BUILD_BENCHMARK=OFF \

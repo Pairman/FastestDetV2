@@ -3,6 +3,7 @@ package org.eu.pnxlr.git.pnxlr.fastestdetv2;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.widget.Toast;
 import android.widget.TextView;
 
 import java.util.concurrent.ExecutorService;
@@ -18,7 +19,12 @@ public class BenchActivity extends AppCompatActivity {
         setContentView(R.layout.activity_bench);
 
         tvBench = findViewById(R.id.tv_bench);
-        FastestDetV2.init(getAssets());
+        String currentModelVariant = ModelVariantConfig.getCurrentVariant(this);
+        if (!FastestDetV2.init(getAssets(), currentModelVariant)) {
+            tvBench.setText("Model " + currentModelVariant + " load failed");
+            Toast.makeText(this, "Model " + currentModelVariant + " load failed", Toast.LENGTH_SHORT).show();
+            return;
+        }
         tvBench.setText("Running benchmark...");
         executor.execute(new Runnable() {
             @Override

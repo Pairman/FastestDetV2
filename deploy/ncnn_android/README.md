@@ -22,9 +22,11 @@ Place NCNN model files under ```app/src/main/assets/```:
 ```text
 deploy/ncnn_android/app/src/main/assets/fastestdetv2.param
 deploy/ncnn_android/app/src/main/assets/fastestdetv2.bin
+deploy/ncnn_android/app/src/main/assets/fastestdetv2-2x.param
+deploy/ncnn_android/app/src/main/assets/fastestdetv2-2x.bin
 ```
 
-`assets/` is not generated automatically. You need to prepare and copy the model files by yourself before building the APK.
+`assets/` is not generated automatically. You need to prepare and copy both model variants by yourself before building the APK. The app home page exposes a button to switch between `1x` and `2x` at runtime.
 
 ### Building
 

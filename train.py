@@ -31,7 +31,9 @@ if __name__ == "__main__":
     ncols = get_terminal_size().columns
     # data loaders
     num_workers = max(4, cpu_count() // 4)
-    train_dataset = Dataset(cfg.train_txt, cfg.input_size, aug=True)
+    train_dataset = Dataset(cfg.train_txt, cfg.input_size, aug=True,
+        hsv_gain=cfg.hsv_gain, flip_p=cfg.flip_p,
+        crop_min=cfg.crop_min, narrow_max=cfg.narrow_max)
     val_dataset = Dataset(cfg.val_txt, cfg.input_size, aug=False)
     train_loader = torch.utils.data.DataLoader(train_dataset, cfg.batch_size,
         shuffle=True, collate_fn=collate_fn, drop_last=True,
@@ -40,7 +42,9 @@ if __name__ == "__main__":
         shuffle=False, collate_fn=collate_fn, drop_last=False,
         num_workers=num_workers, persistent_workers=True)
     # model
-    model = FastestDetV2(num_classes=cfg.num_classes).to(opt.device)
+    model = FastestDetV2(num_classes=cfg.num_classes,
+        backbone_blocks=cfg.backbone_blocks,
+        backbone_channels=cfg.backbone_channels).to(opt.device)
     if opt.weights is not None:
         w = torch.load(opt.weights)
         try:
@@ -51,7 +55,7 @@ if __name__ == "__main__":
                 for k, v in w.items() if k.startswith("backbone.")})
             print(f"Loaded detector backbone from {opt.weights}")
     else:
-        model.backbone.load_state_dict(torch.load(str(savedir/"qamobileone.pth")))
+        model.backbone.load_state_dict(torch.load(str(savedir/cfg.backbone_name)), strict=False)
     ema = EMA(model, decay=cfg.ema_decay, device=opt.device)
     proj_name = f"{type(model).__name__.lower()}_{cfg_name}"
     # optimizer

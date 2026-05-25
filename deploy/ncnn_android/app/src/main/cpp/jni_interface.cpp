@@ -1,23 +1,50 @@
 #include <jni.h>
 #include <string>
+#include <mutex>
 #include <android/asset_manager_jni.h>
 #include "FastestDetV2.h"
 
 namespace {
 
-void native_init(JNIEnv *env, jclass, jobject assetManager) {
+std::mutex detector_mutex;
+
+std::string buildModelAssetPath(const char *variant, const char *extension) {
+    const char *safe_variant = (variant != nullptr && variant[0] != '\0') ? variant : "1x";
+    if (std::string(safe_variant) == "2x") {
+        return std::string("fastestdetv2-2x.") + extension;
+    }
+    return std::string("fastestdetv2.") + extension;
+}
+
+jboolean native_init(JNIEnv *env, jclass, jobject assetManager, jstring modelVariant) {
     AAssetManager *mgr = AAssetManager_fromJava(env, assetManager);
     if (mgr == nullptr) {
-        return;
+        return JNI_FALSE;
     }
 
+    const char *variant_chars = modelVariant == nullptr ? nullptr : env->GetStringUTFChars(modelVariant, nullptr);
+    const std::string param = buildModelAssetPath(variant_chars, "param");
+    const std::string bin = buildModelAssetPath(variant_chars, "bin");
+    if (variant_chars != nullptr) {
+        env->ReleaseStringUTFChars(modelVariant, variant_chars);
+    }
+
+    auto *next_detector = new FastestDetV2(mgr, param.c_str(), bin.c_str());
+    if (!next_detector->isLoaded()) {
+        delete next_detector;
+        return JNI_FALSE;
+    }
+
+    std::lock_guard<std::mutex> lock(detector_mutex);
     delete FastestDetV2::detector;
-    FastestDetV2::detector = new FastestDetV2(mgr, "fastestdetv2.param", "fastestdetv2.bin");
+    FastestDetV2::detector = next_detector;
+    return JNI_TRUE;
 }
 
 jobjectArray native_detect(JNIEnv *env, jclass, jobject image, jdouble threshold, jdouble nms_threshold) {
     auto box_cls = env->FindClass("org/eu/pnxlr/git/pnxlr/fastestdetv2/Box");
     jobjectArray ret = env->NewObjectArray(0, box_cls, nullptr);
+    std::lock_guard<std::mutex> lock(detector_mutex);
     if (FastestDetV2::detector == nullptr || !FastestDetV2::detector->isLoaded() || image == nullptr) {
         return ret;
     }
@@ -37,6 +64,7 @@ jobjectArray native_detect(JNIEnv *env, jclass, jobject image, jdouble threshold
 }
 
 jstring native_bench(JNIEnv *env, jclass, jint iters) {
+    std::lock_guard<std::mutex> lock(detector_mutex);
     if (FastestDetV2::detector == nullptr) {
         return env->NewStringUTF("FastestDetV2 is not initialized.");
     }
@@ -61,7 +89,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     }
 
     static const JNINativeMethod methods[] = {
-            {"init", "(Landroid/content/res/AssetManager;)V", reinterpret_cast<void *>(native_init)},
+            {"init", "(Landroid/content/res/AssetManager;Ljava/lang/String;)Z", reinterpret_cast<void *>(native_init)},
             {"detect", "(Landroid/graphics/Bitmap;DD)[Lorg/eu/pnxlr/git/pnxlr/fastestdetv2/Box;", reinterpret_cast<void *>(native_detect)},
             {"bench", "(I)Ljava/lang/String;", reinterpret_cast<void *>(native_bench)},
     };

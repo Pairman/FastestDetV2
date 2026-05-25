@@ -23,7 +23,10 @@ if __name__ == "__main__":
     opt = parser.parse_args()
     cfg = Config(opt.configs)
     # model
-    model = FastestDetV2(num_classes=cfg.num_classes, inference_mode=True).to(opt.device)
+    model = FastestDetV2(num_classes=cfg.num_classes,
+        backbone_blocks=cfg.backbone_blocks,
+        backbone_channels=cfg.backbone_channels,
+        inference_mode=True).to(opt.device)
     model.load_state_dict(torch.load(opt.weights))
     print(f"Loaded detector weights {opt.weights}")
     model.eval()

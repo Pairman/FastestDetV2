@@ -44,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_CAMERA = 1;
     private static final String[] PERMISSIONS_CAMERA = {Manifest.permission.CAMERA};
     private static final CameraX.LensFacing CAMERA_FACING = CameraX.LensFacing.BACK;
+    private static final String STATE_MODEL_VARIANT = "state_model_variant";
 
     private ImageView resultImageView;
     private TextureView viewFinder;
@@ -56,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
     private double nmsThreshold = 0.45f;
     private double totalFps = 0.0;
     private int fpsCount = 0;
+    private String currentModelVariant = ModelVariantConfig.MODEL_VARIANT_1X;
 
     private final ExecutorService detectExecutor = Executors.newSingleThreadExecutor();
     private final AtomicBoolean detecting = new AtomicBoolean(false);
@@ -64,6 +66,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        currentModelVariant = savedInstanceState != null
+                ? ModelVariantConfig.normalize(savedInstanceState.getString(
+                STATE_MODEL_VARIANT, ModelVariantConfig.MODEL_VARIANT_1X))
+                : ModelVariantConfig.getCurrentVariant(this);
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, PERMISSIONS_CAMERA, REQUEST_CAMERA);
@@ -74,8 +80,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initDetectorPage() {
-        FastestDetV2.init(getAssets());
-
         resultImageView = findViewById(R.id.imageView);
         viewFinder = findViewById(R.id.view_finder);
         thresholdTextview = findViewById(R.id.valTxtView);
@@ -130,9 +134,24 @@ public class MainActivity extends AppCompatActivity {
         viewFinder.post(new Runnable() {
             @Override
             public void run() {
+                initCurrentModel();
                 startCamera();
             }
         });
+    }
+
+    private void initCurrentModel() {
+        currentModelVariant = ModelVariantConfig.getCurrentVariant(this);
+        boolean loaded = FastestDetV2.init(getAssets(), currentModelVariant);
+        if (!loaded) {
+            String message = "Model " + currentModelVariant + " load failed";
+            tvInfo.setText(message);
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        totalFps = 0.0;
+        fpsCount = 0;
     }
 
     private void updateThresholdText() {
@@ -329,6 +348,12 @@ public class MainActivity extends AppCompatActivity {
         CameraX.unbindAll();
         detectExecutor.shutdown();
         super.onDestroy();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(STATE_MODEL_VARIANT, currentModelVariant);
     }
 
     @Override

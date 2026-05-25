@@ -15,20 +15,20 @@ MODEL:
   # Number of blocks in each stage of the backbone
   BACKBONE_BLOCKS: [4, 8, 4]
   # Number of channels in each stage of the backbone
-  BACKBONE_CHANNELS: [24, 48, 96, 192]
+  BACKBONE_CHANNELS: [48, 96, 192, 384]
   # Name of the pretrained backbone weights file in the weights directory
-  BACKBONE_NAME: "qamobileone.pth"
+  BACKBONE_NAME: "qamobileone-2x.pth"
   # Input width and height
   INPUT_SIZE: [352, 352]
 TRAIN:
   # Initial learning rate
-  LEARNING_RATE: 0.003
+  LEARNING_RATE: 0.002
   # Gamma for learning rate decay
   GAMMA: 0.05
   # Number of warm-up epochs
   WARMUP_EPOCH: 5
   # Weight decay factor for non-BN parameters
-  WEIGHT_DECAY: 1e-4
+  WEIGHT_DECAY: 3e-4
   # Momentum factor for SGD optimizer
   MOMENTUM: 0.949
   # EMA decay factor
@@ -41,10 +41,10 @@ TRAIN:
   MILESTONES: [120, 270]
 AUGMENT:
   # HSV jitter gains
-  HSV_GAIN: [0.006, 0.2, 0.1]
+  HSV_GAIN: [0.015, 0.4, 0.3]
   # Horizontal flip probability
   FLIP_P: 0.5
   # Random crop minimum ratio
-  CROP_MIN: 0.75
+  CROP_MIN: 0.5
   # Random narrow maximum ratio
-  NARROW_MAX: 1.25
+  NARROW_MAX: 1.5

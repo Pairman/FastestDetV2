@@ -7,10 +7,10 @@ def horizontal_flip(image, boxes):
     boxes[:, 2] = 1 - boxes[:, 2] # flip cx
     return image[:, ::-1], boxes
 
-def random_crop(image, boxes):
+def random_crop(image, boxes, crop_min=0.75):
     h, w, _ = image.shape
     # random crop
-    cw, ch = random.randint(int(w * 0.75), w), random.randint(int(h * 0.75), h)
+    cw, ch = random.randint(int(w * crop_min), w), random.randint(int(h * crop_min), h)
     cx, cy = random.randint(0, w - cw), random.randint(0, h - ch)
     roi = image[cy:cy + ch, cx:cx + cw]
     roi_h, roi_w, _ = roi.shape
@@ -26,10 +26,10 @@ def random_crop(image, boxes):
     out = out[mask]
     return roi, out
 
-def random_narrow(image, boxes):
+def random_narrow(image, boxes, narrow_max=1.25):
     h, w, _ = image.shape
     # random narrow
-    cw, ch = random.randint(w, int(w * 1.25)), random.randint(h, int(h * 1.25))
+    cw, ch = random.randint(w, int(w * narrow_max)), random.randint(h, int(h * narrow_max))
     cx, cy = random.randint(0, cw - w), random.randint(0, ch - h)
     bg = np.ones((ch, cw, 3), np.uint8) * 128
     bg[cy:cy + h, cx:cx + w] = image

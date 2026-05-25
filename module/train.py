@@ -63,7 +63,8 @@ if __name__ == "__main__":
     parser.add_argument("--datadir", type=str, default=str(Path("/data_ssd/datasets/imagenet")), help="imagenet-1k dataset root")
     parser.add_argument("--device", type=str, default="cuda", help="device")
     parser.add_argument("--enable-wandb", action="store_true", help="log to wandb")
-    cfg = {"name": "imagenet1k", "end_epoch": 300, "batch_size": 256, "learning_rate": 0.1, "warmup_epoch": 5}
+    cfg = {"name": "imagenet1k", "num_blocks_per_stage": [4, 8, 4], "base_channels": [24, 48, 96, 192],
+        "end_epoch": 300, "batch_size": 256, "learning_rate": 0.1, "warmup_epoch": 5}
     opt = parser.parse_args()
     ncols = get_terminal_size().columns
     savedir = Path(_ROOT).resolve()/"weights"
@@ -75,7 +76,7 @@ if __name__ == "__main__":
     train_loader = DataLoaderX(train_dataset, batch_size=cfg["batch_size"], shuffle=True, num_workers=num_workers, pin_memory=True)
     val_loader = DataLoaderX(val_dataset, batch_size=cfg["batch_size"], shuffle=False, num_workers=num_workers, pin_memory=True)
     # model
-    model = QAMobileOneClassifier().to(opt.device)
+    model = QAMobileOneClassifier(num_blocks_per_stage=cfg["num_blocks_per_stage"], base_channels=cfg["base_channels"]).to(opt.device)
     ema = EMA(model, decay=0.9998, device=opt.device)
     proj_name = f"{type(model).__name__.lower()}_{cfg['name']}"
     # optimizer

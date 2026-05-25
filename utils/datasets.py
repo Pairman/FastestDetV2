@@ -20,11 +20,16 @@ def collate_fn(batch):
 class Dataset():
     exts = {".bmp", ".jpg", ".jpeg", ".png"}
 
-    def __init__(self, data_path: str, imgsz: list[int], aug: bool=False):
+    def __init__(self, data_path: str, imgsz: list[int], aug: bool=False,
+        hsv_gain=[0.006, 0.2, 0.1], flip_p=0.5, crop_min=0.75, narrow_max=1.25):
         if not path.exists(data_path):
             raise FileNotFoundError(data_path)
         self.imgsz = imgsz
         self.aug = aug
+        self.hsv_gain = hsv_gain
+        self.flip_p = flip_p
+        self.crop_min = crop_min
+        self.narrow_max = narrow_max
         self.images_dir = self.labels_dir = ""
         self.images_exts = dict()
         self.data_list = []
@@ -73,12 +78,12 @@ class Dataset():
         # augmentation
         if self.aug:
             if random.random() > 0.5:
-                img, label = random_narrow(img, label)
+                img, label = random_narrow(img, label, self.narrow_max)
             else:
-                img, label = random_crop(img, label)
-            if random.random() > 0.5:
+                img, label = random_crop(img, label, self.crop_min)
+            if random.random() < self.flip_p:
                 img, label = horizontal_flip(img, label)
-            img = hsv_jitter(img)
+            img = hsv_jitter(img, *self.hsv_gain)
         # resize
         img = cv2.resize(img, self.imgsz, interpolation=cv2.INTER_LINEAR)
         # hwc->chw

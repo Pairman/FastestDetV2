@@ -13,9 +13,10 @@
 <center><img src="https://github.com/Pairman/FastestDetV2/blob/main/.github/assets/readme_gallery_2.png" width="85%"></center>
 
 ## 基准测试
-Model|mAP50|mAP50:95|Resolution|Inference time (4x core)|Inference time (1x core)|Params (M)
+模型|mAP50|mAP50:95|分辨率|推理耗时 (4核)|推理耗时 (1核)|参数量 (M)
 :---:|:---:|:---:|:---:|:---:|:---:|:---:
 **[FastestDetV2](https://github.com/Pairman/FastestDetV2)**|**27.8%**|**14.0%**|**352X352**|**2.83ms**|**6.95ms**|**0.33M**
+**[FastestDetV2-2x](https://github.com/Pairman/FastestDetV2)**|**36.6%**|**19.9%**|**352X352**|**6.81ms**|**19.88ms**|**1.22M**
 [FastestDet](https://github.com/dog-qiuqiu/FastestDet)|25.3%|13.0%|352X352|3.68ms|8.48ms|0.24M
 [NanoDet-m](https://github.com/RangiLyu/nanodet)|-|20.6%|320X320|7.76ms|22.23ms|0.95M
 [YOLOX-Nano](https://github.com/Megvii-BaseDetection/YOLOX)|-|25.8%|416X416|36.88ms|92.52ms|0.91M
@@ -24,28 +25,27 @@ Model|mAP50|mAP50:95|Resolution|Inference time (4x core)|Inference time (1x core
 > 测试平台为野火鲁班猫4 RK3588S，ARM 4\*Cortex-A76 CPU@2.0GHz，使用[NCNN](https://github.com/Tencent/ncnn)。
 
 ## 多平台基准测试
-Device|Computing backend|System|Framework|Inference time (4x core)|Inference time (1x core)
-:---:|:---:|:---:|:---:|:---:|:---:
-EmbedFire LubanCat-4|RK3588 (CPU) <sup>1</sup>|Linux (arm64)|NCNN|2.83ms|6.95ms
-EmbedFire LubanCat-4|RK3588 (NPU)|Linux (arm64)|RKNN|7.067ms <sup>2</sup>|7.532ms
-Google Pixel 10 Pro XL|Tensor G5 (CPU)|Android (arm64)|NCNN|2.69ms|3.88ms
-OnePlus 6|Snapdragon 845 (CPU)|Android (arm64)|NCNN|4.73ms|8.14ms
-Dell Precision 3630 Tower|Core i9-9900 (CPU) <sup>3</sup>|Linux (x86_64)|NCNN|2.90m|7.31ms
+设备|算力后端|系统|框架|推理耗时 (4核)|推理耗时 (1核) | 2x推理耗时 (4核)| 2x推理耗时 (1核)
+:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:
+EmbedFire LubanCat-4|RK3588 (CPU) <sup>1</sup>|Linux (arm64)|NCNN|2.83ms|6.95ms|6.81ms|19.88ms
+EmbedFire LubanCat-4|RK3588 (NPU)|Linux (arm64)|RKNN|7.067ms <sup>2</sup>|7.532ms|8.04ms <sup>3 </sup>|9.56ms
+Google Pixel 10 Pro XL|Tensor G5 (CPU)|Android (arm64)|NCNN|2.69ms|3.88ms|4.66ms|6.26ms
+OnePlus 6|Snapdragon 845 (CPU)|Android (arm64)|NCNN|4.73ms|8.14ms|11.56ms|17.84ms
+Dell Precision 3630 Tower|Core i9-9900 (CPU) <sup>3</sup>|Linux (x86_64)|NCNN|2.90m|7.31ms|6.86ms|19.94ms
 > <sup>1</sup>: 频率为2.0GHz。<br>
-> <sup>2</sup>: 使用RKNNLite.NPU_CORE_0_1_2。<br>
-> <sup>3</sup>: 频率为800MHz。
+> <sup>2</sup>, <sup>3</sup>: 使用RKNNLite.NPU_CORE_0_1_2。<br>
+> <sup>4</sup>: 频率为800MHz。
 
 ## 模型下载
-Download|Note
+下载地址|备注
 :---:|:---:
-[fastestdetv2.pth](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.pth)|融合后的权重
-[fastestdetv2_unfused.pth](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2_unfused.pth)|未融合的权重
-[qamobileone.pth](https://github.com/Pairman/FastestDetV2/releases/download/v1/qamobileone.pth)|骨干网络权重
+[fastestdetv2.pth](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.pth), [fastestdetv2_unfused.pth](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2_unfused.pth)<br>[fastestdetv2-2x.pth](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2-2x.pth), [fastestdetv2-2x_unfused.pth](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2-2x_unfused.pth)|模型权重
+[qamobileone.pth](https://github.com/Pairman/FastestDetV2/releases/download/v1/qamobileone.pth)<br>[qamobileone-2x.pth](https://github.com/Pairman/FastestDetV2/releases/download/v1/qamobileone-2x.pth)|骨干权重
 [fastestdetv2.apk](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.apk)|安卓演示应用
-[fastestdetv2.bin](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.bin)<br>[fastestdetv2.param](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.param)|NCNN文件
-[fastestdetv2.rknn](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.rknn)|RKNN文件
-[fastestdetv2.onnx](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.onnx)|ONNX文件
-[fastestdetv2.pt](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.pt)<br>[fastestdetv2_ptq,arm.pt](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2_ptq,arm.pt)<br>[fastestdetv2_ptq,x86.pt](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2_ptq,x86.pt)|TorchScript文件
+[fastestdetv2.bin](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.bin), [fastestdetv2.param](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.param)<br>[fastestdetv2-2x.bin](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2-2x.bin), [fastestdetv2-2x.param](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2-2x.param)|NCNN文件
+[fastestdetv2.rknn](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.rknn)<br>[fastestdetv2-2x.rknn](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2-2x.rknn)|RKNN文件
+[fastestdetv2.onnx](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.onnx)<br>[fastestdetv2-2x.onnx](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2-2x.onnx)|ONNX文件
+[fastestdetv2.pt](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.pt), [fastestdetv2_ptq.arm.pt](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2_ptq.arm.pt), [fastestdetv2_ptq.x86.pt](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2_ptq.x86.pt)<br>[fastestdetv2-2x.pt](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2-2x.pt), [fastestdetv2-2x_ptq.arm.pt](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2-2x_ptq.arm.pt), [fastestdetv2-2x_ptq.x86.pt](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2_ptq.x86.pt)|TorchScript文件
 
 # 使用
 
@@ -77,7 +77,7 @@ python3 test.py --configs CONFIGS_PATH --weights WEIGHTS_PATH --image IMAGE_PATH
 
 ## 训练
 
-下载骨干网络权重并放到 `weights/qamobileone.pth`，然后运行：
+下载骨干权重并放到`weights/qamobileone.pth`、`weights/qamobileone-2x.pth`，然后运行：
 
 ```sh
 python3 train.py --configs CONFIGS_PATH

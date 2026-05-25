@@ -43,7 +43,10 @@ if __name__ == "__main__":
         shuffle=False, collate_fn=collate_fn, drop_last=False,
         num_workers=num_workers, persistent_workers=True)
     # model
-    model = FastestDetV2(num_classes=cfg.num_classes, inference_mode=True).to(opt.device).eval()
+    model = FastestDetV2(num_classes=cfg.num_classes,
+        backbone_blocks=cfg.backbone_blocks,
+        backbone_channels=cfg.backbone_channels,
+        inference_mode=True).to(opt.device).eval()
     model.load_state_dict(torch.load(opt.weights))
     print(f"Loaded detector weights {opt.weights}")
     proj_name = f"{type(model).__name__.lower()}_{cfg_name}"
@@ -59,7 +62,7 @@ if __name__ == "__main__":
         quantizer = xiq.X86InductorQuantizer()
         quantizer.set_module_name_qconfig("backbone", qconfig)
     else:
-        import torch.ao.quantization.quantizer.xnnpack_quantizer as xp    # restrict arm ptq to the backbone.
+        import torch.ao.quantization.quantizer.xnnpack_quantizer as xpq   # restrict arm ptq to the backbone.
         class _SelectiveXNNPACKQuantizer(xpq.XNNPACKQuantizer):
             def set_module_name(self, module_name: str, quantization_config):
                 self.module_name_config[module_name] = quantization_config
@@ -82,4 +85,4 @@ if __name__ == "__main__":
     stats = COCODetectionEvaluator(cfg.names, "cpu").eval(
         val_loader, model_quant.module(), ncols=ncols, colour="green")
     torch.export.save(model_quant, str(savedir/
-        f"{proj_name}_ptq,{opt.target}.pt"))
+        f"{proj_name}_ptq.{opt.target}.pt"))

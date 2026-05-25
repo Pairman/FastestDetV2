@@ -20,6 +20,7 @@
 Model|mAP50|mAP50:95|Resolution|Inference time (4x core)|Inference time (1x core)|Params (M)
 :---:|:---:|:---:|:---:|:---:|:---:|:---:
 **[FastestDetV2](https://github.com/Pairman/FastestDetV2)**|**27.8%**|**14.0%**|**352X352**|**2.83ms**|**6.95ms**|**0.33M**
+**[FastestDetV2-2x](https://github.com/Pairman/FastestDetV2)**|**36.6%**|**19.9%**|**352X352**|**6.81ms**|**19.88ms**|**1.22M**
 [FastestDet](https://github.com/dog-qiuqiu/FastestDet)|25.3%|13.0%|352X352|3.68ms|8.48ms|0.24M
 [NanoDet-m](https://github.com/RangiLyu/nanodet)|-|20.6%|320X320|7.76ms|22.23ms|0.95M
 [YOLOX-Nano](https://github.com/Megvii-BaseDetection/YOLOX)|-|25.8%|416X416|36.88ms|92.52ms|0.91M
@@ -28,28 +29,27 @@ Model|mAP50|mAP50:95|Resolution|Inference time (4x core)|Inference time (1x core
 > Tested on EmbedFire LubanCat-4 RK3588S ARM 4\*Cortex-A76 CPU@2.0GHz, using [NCNN](https://github.com/Tencent/ncnn).
 
 ## Multi-platform Benchmarks
-Device|Computing backend|System|Framework|Inference time (4x core)|Inference time (1x core)
-:---:|:---:|:---:|:---:|:---:|:---:
-EmbedFire LubanCat-4|RK3588 (CPU) <sup>1</sup>|Linux (arm64)|NCNN|2.83ms|6.95ms
-EmbedFire LubanCat-4|RK3588 (NPU)|Linux (arm64)|RKNN|7.067ms <sup>2</sup>|7.532ms
-Google Pixel 10 Pro XL|Tensor G5 (CPU)|Android (arm64)|NCNN|2.69ms|3.88ms
-OnePlus 6|Snapdragon 845 (CPU)|Android (arm64)|NCNN|4.73ms|8.14ms
-Dell Precision 3630 Tower|Core i9-9900 (CPU) <sup>3</sup>|Linux (x86_64)|NCNN|2.90m|7.31ms
+Device|Computing backend|System|Framework|Inference time (4x core)|Inference time (1x core) | 2x Inference time (4x core)| 2x Inference time (1x core)
+:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:
+EmbedFire LubanCat-4|RK3588 (CPU) <sup>1</sup>|Linux (arm64)|NCNN|2.83ms|6.95ms|6.81ms|19.88ms
+EmbedFire LubanCat-4|RK3588 (NPU)|Linux (arm64)|RKNN|7.067ms <sup>2</sup>|7.532ms|8.04ms <sup>3 </sup>|9.56ms
+Google Pixel 10 Pro XL|Tensor G5 (CPU)|Android (arm64)|NCNN|2.69ms|3.88ms|4.66ms|6.26ms
+OnePlus 6|Snapdragon 845 (CPU)|Android (arm64)|NCNN|4.73ms|8.14ms|11.56ms|17.84ms
+Dell Precision 3630 Tower|Core i9-9900 (CPU) <sup>3</sup>|Linux (x86_64)|NCNN|2.90m|7.31ms|6.86ms|19.94ms
 > <sup>1</sup>: At 2.0 GHz.<br>
-> <sup>2</sup>: RKNNLite.NPU_CORE_0_1_2 is used.<br>
-> <sup>3</sup>: At 800MHz.
+> <sup>2</sup>, <sup>3</sup>: RKNNLite.NPU_CORE_0_1_2 is used.<br>
+> <sup>4</sup>: At 800MHz.
 
 ## Model Zoo
 Download|Note
 :---:|:---:
-[fastestdetv2.pth](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.pth)|Fused weights
-[fastestdetv2_unfused.pth](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2_unfused.pth)|Unfused weights
-[qamobileone.pth](https://github.com/Pairman/FastestDetV2/releases/download/v1/qamobileone.pth)|Backbone weights
+[fastestdetv2.pth](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.pth), [fastestdetv2_unfused.pth](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2_unfused.pth)<br>[fastestdetv2-2x.pth](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2-2x.pth), [fastestdetv2-2x_unfused.pth](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2-2x_unfused.pth)|Model weights
+[qamobileone.pth](https://github.com/Pairman/FastestDetV2/releases/download/v1/qamobileone.pth)<br>[qamobileone-2x.pth](https://github.com/Pairman/FastestDetV2/releases/download/v1/qamobileone-2x.pth)|Backbone weights
 [fastestdetv2.apk](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.apk)|Android demo
-[fastestdetv2.bin](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.bin)<br>[fastestdetv2.param](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.param)|NCNN files
-[fastestdetv2.rknn](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.rknn)|RKNN file
-[fastestdetv2.onnx](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.onnx)|ONNX file
-[fastestdetv2.pt](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.pt)<br>[fastestdetv2_ptq,arm.pt](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2_ptq,arm.pt)<br>[fastestdetv2_ptq,x86.pt](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2_ptq,x86.pt)|TorchScript files
+[fastestdetv2.bin](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.bin), [fastestdetv2.param](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.param)<br>[fastestdetv2-2x.bin](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2-2x.bin), [fastestdetv2-2x.param](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2-2x.param)|NCNN files
+[fastestdetv2.rknn](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.rknn)<br>[fastestdetv2-2x.rknn](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2-2x.rknn)|RKNN files
+[fastestdetv2.onnx](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.onnx)<br>[fastestdetv2-2x.onnx](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2-2x.onnx)|ONNX files
+[fastestdetv2.pt](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.pt), [fastestdetv2_ptq.arm.pt](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2_ptq.arm.pt), [fastestdetv2_ptq.x86.pt](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2_ptq.x86.pt)<br>[fastestdetv2-2x.pt](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2-2x.pt), [fastestdetv2-2x_ptq.arm.pt](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2-2x_ptq.arm.pt), [fastestdetv2-2x_ptq.x86.pt](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2_ptq.x86.pt)|TorchScript files
 
 # Usage
 
@@ -81,7 +81,7 @@ python3 test.py --configs CONFIGS_PATH --weights WEIGHTS_PATH --image IMAGE_PATH
 
 ## Training
 
-Download the backbone weights and place it under ```weights/qamobileone.pth```, and run:
+Download the backbone weights and place it under `weights/qamobileone.pth` and `weights/qamobileone-2x.pth`, and run:
 
 ```sh
 python3 train.py --configs CONFIGS_PATH
