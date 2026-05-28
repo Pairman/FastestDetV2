@@ -31,7 +31,7 @@ EmbedFire LubanCat-4|RK3588 (CPU) <sup>1</sup>|Linux (arm64)|NCNN|2.83ms|6.95ms|
 EmbedFire LubanCat-4|RK3588 (NPU)|Linux (arm64)|RKNN|7.067ms <sup>2</sup>|7.532ms|8.04ms <sup>3 </sup>|9.56ms
 Google Pixel 10 Pro XL|Tensor G5 (CPU)|Android (arm64)|NCNN|2.69ms|3.88ms|4.66ms|6.26ms
 OnePlus 6|Snapdragon 845 (CPU)|Android (arm64)|NCNN|4.73ms|8.14ms|11.56ms|17.84ms
-Dell Precision 3630 Tower|Core i9-9900 (CPU) <sup>3</sup>|Linux (x86_64)|NCNN|2.90m|7.31ms|6.86ms|19.94ms
+Dell Precision 3630 Tower|Core i9-9900 (CPU) <sup>4</sup>|Linux (x86_64)|NCNN|2.90m|7.31ms|6.86ms|19.94ms
 > <sup>1</sup>: 频率为2.0GHz。<br>
 > <sup>2</sup>, <sup>3</sup>: 使用RKNNLite.NPU_CORE_0_1_2。<br>
 > <sup>4</sup>: 频率为800MHz。
