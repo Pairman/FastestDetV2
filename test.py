@@ -52,12 +52,12 @@ if __name__ == "__main__":
     img = torch.from_numpy(img).permute(2,0,1).unsqueeze(0) # HWC->BCHW
     img = img.float().div(255.0).to(opt.device) # norm
     # warmup
-    with torch.no_grad():
+    with torch.inference_mode():
         model(torch.randn(img.shape, device=opt.device))
     # inference
     print("Starting inference")
     t1 = time.perf_counter()
-    with torch.no_grad():
+    with torch.inference_mode():
         preds = model(img)
     t2 = time.perf_counter()
     print(f"Inference time: {(t2 - t1) * 1000}ms")

@@ -89,7 +89,7 @@ class COCODetectionEvaluator():
         pbar = tqdm(val_loader, **kwargs)
         for imgs, labels in pbar:
             imgs = imgs.to(self.device).float() / 255.0
-            with torch.no_grad():
+            with torch.inference_mode():
                 preds = model(imgs)
                 output = apply_nms(decode_preds(preds), conf_thres=0.001)
             n, _, h, w = imgs.shape
