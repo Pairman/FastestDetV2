@@ -1,0 +1,83 @@
+deploy/cann/bench_cann.py
+  s_148f26a028a0b4::t_e23257a0e39fdc 28-30
+  s_148f26a028a0b4::t_40ec81aa9eb239 5-7
+  s_148f26a028a0b4::t_047ff31ebf7cd0 8-27
+  s_148f26a028a0b4::t_dd6cf8b805a585 2-4
+  s_148f26a028a0b4::t_f1ac310b826362 31-32
+README.md
+  h_447beade967432 34
+deploy/cann/README.md
+  s_893d2d200a6926::t_a6491350168083 28
+  s_06445360a464f5::t_f9ff8e88c2f3ab 12,21,29,33,36,42
+  s_06445360a464f5::t_f28f5c03a4838e 41
+  s_893d2d200a6926::t_aa2b49cb09320c 10,16,25-27,40
+  s_893d2d200a6926::t_6248a1eeeb8900 7-9
+  s_06445360a464f5::t_6aed29786c315c 30-32
+  s_06445360a464f5::t_fa100354bdb646 34-35
+deploy/cann/test_cann.py
+  h_447beade967432 1-102
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.2",
+  "base_commit_sha": "0c188030cdecab390f31c250d203026cf05ede77",
+  "prompts": {},
+  "humans": {
+    "h_447beade967432": {
+      "author": "Pairman Guo <pairmanxlr@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_06445360a464f5": {
+      "agent_id": {
+        "tool": "trae-cue",
+        "id": "ai_tab-icr-8270e4f9-1684-4494-82e8-a4dcbb456324",
+        "model": "default"
+      },
+      "human_author": "Pairman Guo <pairmanxlr@gmail.com>",
+      "custom_attributes": {
+        "client_type": "ide",
+        "external_session_id": "icr-8270e4f9-1684-4494-82e8-a4dcbb456324",
+        "edit_kind": "file_edit",
+        "source_scene": "cue",
+        "tool": "trae-cue"
+      }
+    },
+    "s_148f26a028a0b4": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "6a8cfe0ac1c4863835c9a512",
+        "model": "DeepSeek-V4-Flash-Official"
+      },
+      "human_author": "Pairman Guo <pairmanxlr@gmail.com>",
+      "custom_attributes": {
+        "tool_use_id": "6a8d04d3c1c4863835c9a588",
+        "tool_id": "icube:applyChatSnapshotPatch",
+        "source_scene": "agent",
+        "dedupe_key": "6a8cfe0ac1c4863835c9a512:6a8d04d3c1c4863835c9a588:afterEdit:111fd2ce",
+        "tool_type": "builtin",
+        "client_type": "ide",
+        "runtime_client": "trae-tob-git-ai",
+        "edit_kind": "file_edit",
+        "external_session_id": "6a8cfe0ac1c4863835c9a512",
+        "operation_id": "6a8d04d3c1c4863835c9a588",
+        "session_id": "6a8cfe0ac1c4863835c9a512"
+      }
+    },
+    "s_893d2d200a6926": {
+      "agent_id": {
+        "tool": "trae-cue",
+        "id": "ai_tab-icr-a3ee68ea-c2db-47f4-bf66-bd5ddac25945",
+        "model": "default"
+      },
+      "human_author": "Pairman Guo <pairmanxlr@gmail.com>",
+      "custom_attributes": {
+        "source_scene": "cue",
+        "client_type": "ide",
+        "tool": "trae-cue",
+        "external_session_id": "icr-a3ee68ea-c2db-47f4-bf66-bd5ddac25945",
+        "edit_kind": "file_edit"
+      }
+    }
+  }
+}
