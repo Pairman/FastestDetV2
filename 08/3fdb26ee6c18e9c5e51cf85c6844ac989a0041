@@ -1,0 +1,94 @@
+deploy/cann/README.md
+  s_893d2d200a6926::t_a6491350168083 27
+  s_06445360a464f5::t_f28f5c03a4838e 33
+  s_893d2d200a6926::t_aa2b49cb09320c 24-26
+  s_06445360a464f5::t_f9ff8e88c2f3ab 34
+README.md
+  h_447beade967432 34
+  s_67ea0cae7822f5::t_a8a8141527e6b2 50
+deploy/cann/test_cann.py
+  h_447beade967432 1-102
+deploy/cann/bench_cann.py
+  s_148f26a028a0b4::t_047ff31ebf7cd0 8-27
+  s_148f26a028a0b4::t_40ec81aa9eb239 5-7
+  s_148f26a028a0b4::t_e23257a0e39fdc 28-30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.2",
+  "base_commit_sha": "083fdb26ee6c18e9c5e51cf85c6844ac989a0041",
+  "prompts": {},
+  "humans": {
+    "h_447beade967432": {
+      "author": "Pairman Guo <pairmanxlr@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_06445360a464f5": {
+      "agent_id": {
+        "tool": "trae-cue",
+        "id": "ai_tab-icr-8270e4f9-1684-4494-82e8-a4dcbb456324",
+        "model": "default"
+      },
+      "human_author": "Pairman Guo <pairmanxlr@gmail.com>",
+      "custom_attributes": {
+        "external_session_id": "icr-8270e4f9-1684-4494-82e8-a4dcbb456324",
+        "source_scene": "cue",
+        "client_type": "ide",
+        "tool": "trae-cue",
+        "edit_kind": "file_edit"
+      }
+    },
+    "s_148f26a028a0b4": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "6a8cfe0ac1c4863835c9a512",
+        "model": "DeepSeek-V4-Flash-Official"
+      },
+      "human_author": "Pairman Guo <pairmanxlr@gmail.com>",
+      "custom_attributes": {
+        "operation_id": "6a8d04d3c1c4863835c9a588",
+        "source_scene": "agent",
+        "session_id": "6a8cfe0ac1c4863835c9a512",
+        "client_type": "ide",
+        "tool_id": "icube:applyChatSnapshotPatch",
+        "external_session_id": "6a8cfe0ac1c4863835c9a512",
+        "dedupe_key": "6a8cfe0ac1c4863835c9a512:6a8d04d3c1c4863835c9a588:afterEdit:111fd2ce",
+        "runtime_client": "trae-tob-git-ai",
+        "tool_use_id": "6a8d04d3c1c4863835c9a588",
+        "edit_kind": "file_edit",
+        "tool_type": "builtin"
+      }
+    },
+    "s_67ea0cae7822f5": {
+      "agent_id": {
+        "tool": "trae-code-edit",
+        "id": "ai_tab-20260825110325010003156118178788D",
+        "model": "default"
+      },
+      "human_author": "Pairman Guo <pairmanxlr@gmail.com>",
+      "custom_attributes": {
+        "edit_kind": "file_edit",
+        "external_session_id": "20260825110325010003156118178788D",
+        "client_type": "ide",
+        "tool": "trae-code-edit",
+        "source_scene": "cue"
+      }
+    },
+    "s_893d2d200a6926": {
+      "agent_id": {
+        "tool": "trae-cue",
+        "id": "ai_tab-icr-a3ee68ea-c2db-47f4-bf66-bd5ddac25945",
+        "model": "default"
+      },
+      "human_author": "Pairman Guo <pairmanxlr@gmail.com>",
+      "custom_attributes": {
+        "client_type": "ide",
+        "edit_kind": "file_edit",
+        "tool": "trae-cue",
+        "source_scene": "cue",
+        "external_session_id": "icr-a3ee68ea-c2db-47f4-bf66-bd5ddac25945"
+      }
+    }
+  }
+}
