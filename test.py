@@ -28,11 +28,9 @@ if __name__ == "__main__":
         backbone_channels=cfg.backbone_channels,
         inference_mode=True)
     model.load_state_dict(torch.load(opt.weights, map_location="cpu"))
-    model.to(opt.device)
     print(f"Loaded detector weights {opt.weights}")
     model.eval()
     if opt.export:
-        model.to("cpu")
         dummy = torch.randn(1, 3, cfg.input_size[1], cfg.input_size[0], device="cpu")
         onnx_path = Path(opt.weights).with_suffix(".onnx")
         ts_path = Path(opt.weights).with_suffix(".pt")
@@ -46,6 +44,7 @@ if __name__ == "__main__":
             traced.save(str(ts_path))
         print(f"Saved to {onnx_path} and {ts_path}")
         sys.exit(0)
+    model.to(opt.device)
     # preproc
     print(f"Processing image {opt.image}")
     img0 = cv2.imread(opt.image)

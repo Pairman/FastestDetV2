@@ -27,6 +27,7 @@
 ## 多平台基准测试
 设备|算力后端|系统|框架|推理耗时 (4核)|推理耗时 (1核) | 2x推理耗时 (4核)| 2x推理耗时 (1核)
 :---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:
+Huawei Atlas 800I A3|Ascend 910_9362 (NPU)|Linux (arm64)|CANN|/|0.45ms|/|0.58ms
 EmbedFire LubanCat-4|RK3588 (CPU) <sup>1</sup>|Linux (arm64)|NCNN|2.83ms|6.95ms|6.81ms|19.88ms
 EmbedFire LubanCat-4|RK3588 (NPU)|Linux (arm64)|RKNN|7.067ms <sup>2</sup>|7.532ms|8.04ms <sup>3 </sup>|9.56ms
 Google Pixel 10 Pro XL|Tensor G5 (CPU)|Android (arm64)|NCNN|2.69ms|3.88ms|4.66ms|6.26ms
@@ -43,7 +44,8 @@ Dell Precision 3630 Tower|Core i9-9900 (CPU) <sup>4</sup>|Linux (x86_64)|NCNN|2.
 [qamobileone.pth](https://github.com/Pairman/FastestDetV2/releases/download/v1/qamobileone.pth)<br>[qamobileone-2x.pth](https://github.com/Pairman/FastestDetV2/releases/download/v1/qamobileone-2x.pth)|骨干权重
 [fastestdetv2.apk](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.apk)|安卓演示应用
 [fastestdetv2.bin](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.bin), [fastestdetv2.param](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.param)<br>[fastestdetv2-2x.bin](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2-2x.bin), [fastestdetv2-2x.param](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2-2x.param)|NCNN文件
-[fastestdetv2.rknn](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.rknn)<br>[fastestdetv2-2x.rknn](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2-2x.rknn)|RKNN文件
+（与目标平台相关，未提供）|CANN files
+（与目标平台相关，未提供）|RKNN files
 [fastestdetv2.onnx](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.onnx)<br>[fastestdetv2-2x.onnx](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2-2x.onnx)|ONNX文件
 [fastestdetv2.pt](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2.pt), [fastestdetv2_ptq.arm.pt](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2_ptq.arm.pt), [fastestdetv2_ptq.x86.pt](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2_ptq.x86.pt)<br>[fastestdetv2-2x.pt](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2-2x.pt), [fastestdetv2-2x_ptq.arm.pt](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2-2x_ptq.arm.pt), [fastestdetv2-2x_ptq.x86.pt](https://github.com/Pairman/FastestDetV2/releases/download/v1/fastestdetv2_ptq.x86.pt)|TorchScript文件
 
@@ -109,6 +111,10 @@ python3 quant.py --configs CONFIGS_PATH --weights WEIGHTS_PATH --image IMAGE_PAT
 ### NCNN
 
 参考[deploy/ncnn/README.md](https://github.com/Pairman/FastestDetV2/blob/main/deploy/ncnn/README.md)或[deploy/ncnn_android/README.md](https://github.com/Pairman/FastestDetV2/blob/main/deploy/ncnn_android/README.md)（Android）。
+
+### CANN
+
+参考[deploy/cann/README.md](https://github.com/Pairman/FastestDetV2/blob/main/deploy/cann/README.md).
 
 ### RKNN
 
