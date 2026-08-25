@@ -22,7 +22,7 @@ from utils.quant import print_quant_stats
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--device", type=str, default="cuda", help="device")
-    parser.add_argument("--weights", type=str, default=str(Path(_ROOT)/"weights/fastestdetv2_coco_best.pth"), help=".pt weights, reparameterized")
+    parser.add_argument("--weights", type=str, default=str(Path(_ROOT)/"weights/fastestdetv2_coco_best.pth"), help=".pth weights, reparameterized")
     parser.add_argument("--configs", type=str, default=str(Path(_ROOT)/"configs/coco.yaml"), help=".yaml configs")
     parser.add_argument("--target", type=str, default="arm", help="target platform, arm or x86")
     opt = parser.parse_args()
@@ -46,8 +46,9 @@ if __name__ == "__main__":
     model = FastestDetV2(num_classes=cfg.num_classes,
         backbone_blocks=cfg.backbone_blocks,
         backbone_channels=cfg.backbone_channels,
-        inference_mode=True).to(opt.device).eval()
-    model.load_state_dict(torch.load(opt.weights))
+        inference_mode=True)
+    model.load_state_dict(torch.load(opt.weights, map_location="cpu"))
+    model.to(opt.device).eval()
     print(f"Loaded detector weights {opt.weights}")
     proj_name = f"{type(model).__name__.lower()}_{cfg_name}"
     # quantizer

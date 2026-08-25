@@ -20,7 +20,7 @@ from utils.reparam import reparameterize_model
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--device", type=str, default="cuda", help="device")
-    parser.add_argument("--weights", type=str, default=None, help=".pt weights")
+    parser.add_argument("--weights", type=str, default=None, help=".pth weights")
     parser.add_argument("--configs", type=str, default=str(Path(__file__).parent/"configs/coco.yaml"), help=".yaml configs")
     parser.add_argument("--enable-wandb", action="store_true", help="log to wandb")
     opt = parser.parse_args()
@@ -44,9 +44,9 @@ if __name__ == "__main__":
     # model
     model = FastestDetV2(num_classes=cfg.num_classes,
         backbone_blocks=cfg.backbone_blocks,
-        backbone_channels=cfg.backbone_channels).to(opt.device)
+        backbone_channels=cfg.backbone_channels)
     if opt.weights is not None:
-        w = torch.load(opt.weights)
+        w = torch.load(opt.weights, map_location="cpu")
         try:
             model.load_state_dict(w, strict=False)
             print(f"Loaded detector weights {opt.weights}")
@@ -55,7 +55,9 @@ if __name__ == "__main__":
                 for k, v in w.items() if k.startswith("backbone.")})
             print(f"Loaded detector backbone from {opt.weights}")
     else:
-        model.backbone.load_state_dict(torch.load(str(savedir/cfg.backbone_name)), strict=False)
+        model.backbone.load_state_dict(torch.load(
+            str(savedir/cfg.backbone_name), map_location="cpu"), strict=False)
+    model.to(opt.device)
     ema = EMA(model, decay=cfg.ema_decay, device=opt.device)
     proj_name = f"{type(model).__name__.lower()}_{cfg_name}"
     # optimizer

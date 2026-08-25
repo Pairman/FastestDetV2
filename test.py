@@ -14,7 +14,7 @@ from utils.nms import decode_preds, apply_nms
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--device", type=str, default="cuda", help="device")
-    parser.add_argument("--weights", type=str, default=str(Path(_ROOT)/"weights/fastestdetv2_coco_best.pth"), help=".pt weights")
+    parser.add_argument("--weights", type=str, default=str(Path(_ROOT)/"weights/fastestdetv2_coco_best.pth"), help=".pth weights")
     parser.add_argument("--configs", type=str, default=str(Path(_ROOT)/"configs/coco.yaml"), help=".yaml configs")
     parser.add_argument("--image", type=str, default=None, help="input image if not exporting")
     parser.add_argument("--result", type=str, default="result.png", help="input image")
@@ -26,8 +26,9 @@ if __name__ == "__main__":
     model = FastestDetV2(num_classes=cfg.num_classes,
         backbone_blocks=cfg.backbone_blocks,
         backbone_channels=cfg.backbone_channels,
-        inference_mode=True).to(opt.device)
-    model.load_state_dict(torch.load(opt.weights))
+        inference_mode=True)
+    model.load_state_dict(torch.load(opt.weights, map_location="cpu"))
+    model.to(opt.device)
     print(f"Loaded detector weights {opt.weights}")
     model.eval()
     if opt.export:
@@ -39,7 +40,7 @@ if __name__ == "__main__":
             # onnx
             torch.onnx.export(model, dummy, str(onnx_path),
                 input_names=["input"], output_names=["output"],
-                opset_version=11, do_constant_folding=True)
+                opset_version=18, do_constant_folding=True)
             # torchscript
             traced = torch.jit.trace(model, dummy)
             traced.save(str(ts_path))

@@ -14,7 +14,7 @@ from utils.evaluator import COCODetectionEvaluator
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--device", type=str, default="cuda", help="device")
-    parser.add_argument("--weights", type=str, default=str(Path(_ROOT)/"weights/fastestdetv2_coco_best.pth"), help=".pt weights")
+    parser.add_argument("--weights", type=str, default=str(Path(_ROOT)/"weights/fastestdetv2_coco_best.pth"), help=".pth weights")
     parser.add_argument("--configs", type=str, default=str(Path(_ROOT)/"configs/coco.yaml"), help=".yaml configs")
     opt = parser.parse_args()
     cfg = Config(opt.configs)
@@ -28,10 +28,10 @@ if __name__ == "__main__":
     model = FastestDetV2(num_classes=cfg.num_classes,
         backbone_blocks=cfg.backbone_blocks,
         backbone_channels=cfg.backbone_channels,
-        inference_mode=True).to(opt.device)
-    model.load_state_dict(torch.load(opt.weights))
+        inference_mode=True)
+    model.load_state_dict(torch.load(opt.weights, map_location="cpu"))
+    model.to(opt.device).eval()
     print(f"Loaded detector weights {opt.weights}")
-    model.eval()
     print("Starting evaluation")
     stats = COCODetectionEvaluator(cfg.names, opt.device).eval(
         val_loader, model, colour="green")
